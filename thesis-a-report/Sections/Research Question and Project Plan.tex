@@ -1,13 +1,60 @@
 \section{Research Question and Project Plan}
 
-This section will start with a clear statement on your research question, i.e. what you want to discover in relation to the already available literature and its gaps (connect to previous section). Hypothesis and aims at the basis of your research will also be presented to detail your research question, again in relation to what has been already observed in literature (e.g. a particular aspect is not considered because multiple studies have shown it is not relevant). After detailing your research question, you will describe with technical detail how you are going to conduct your research (research plan). In particular you should discuss:
-
-% Use itemize to create dot points
+\subsection{Primary Research Question}
 \begin{itemize}
-    \item your proposed solution/experimental methodology to address the research question;
-    \item your thesis timeline (possibly with a Gantt chart or some kind of dated mindmap, which can go in appendix, and can be referenced to in this section) and a justification of time allocation for each task;
-    \item the resources you have identified as available to your research; and
-    \item the required training and upskilling you will need to obtain.
+    \item What is the feasibility and performance of a vision-based, turbidity-adaptive pose estimation system for autonomous docking of an ROV to a free-floating underwater station?
 \end{itemize}
-Try to corredate textual descriptions with visual aids (e.g. pictures of your experimental rig).
-This section is \textbf{3-5 pages} long. 
+
+\subsection{Sub-Questions}
+\begin{itemize}
+    \item How robust are fiducial- and learning-based detection methods under varying turbidity levels?
+    \item What pose estimation accuracy and update rate are required for safe docking given platform motion?
+    \item How can motion compensation and control be designed to handle free-floating dock dynamics and tether effects?
+    \item What are the computational and sensor requirements for onboard real-time operation?
+\end{itemize}
+
+\subsection{Hypothesis / Expected Feasibility}
+\begin{itemize}
+    \item Hypothesis: A turbidity-adaptive vision pipeline combined with motion compensation and fallback beacons can achieve reliable docking in moderate turbidity for short-range approaches.
+    \item Expected limitations: High turbidity beyond optical visibility will require hybrid sensing (acoustic/LED) or manual intervention.
+\end{itemize}
+
+\subsection{Proposed Methodology Overview}
+\begin{itemize}
+    \item Develop image pre-processing (dehazing, contrast enhancement) tuned for turbidity levels
+    \item Implement fiducial detection (AprilTag/ArUco) and a CNN backup detector for degraded visuals
+    \item Pose estimation module using PnP with RANSAC and temporal smoothing / Kalman filtering
+    \item Design motion compensation: estimate dock motion from vision + IMU, feed to controller
+    \item Closed-loop control for approach, alignment, and final engagement with abort/fallback behaviours
+    \item Validation in tank experiments with controlled turbidity, then scaled field trials
+\end{itemize}
+
+\subsection{System Block Diagram Description}
+\begin{itemize}
+    \item High-level blocks: Sensors (camera, IMU, optionally acoustic), Preprocessing, Detection, Pose Estimator, State Estimator, Controller, Actuators, Supervisory Logic
+    \item Data flow: camera -> preprocessing -> detector -> pose estimator -> state estimator -> controller -> thrusters
+    \item Decision logic for mode switching and fallback to active beacons or manual control
+\end{itemize}
+
+\subsection{Success Criteria}
+\begin{itemize}
+    \item Detection range and pose accuracy thresholds across turbidity conditions (quantified)
+    \item Successful autonomous docking rate in repeated tank trials (e.g., >80% in moderate turbidity)
+    \item Time-to-dock and energy consumed per docking operation within acceptable bounds
+    \item Safe abort behaviour and no damage to ROV or dock across trials
+\end{itemize}
+
+\subsection{Timeline}
+\begin{itemize}
+    \item Weeks 1--4: Literature synthesis, platform familiarisation, hardware procurement
+    \item Weeks 5--10: Software stack setup, baseline detection algorithms, simulation
+    \item Weeks 11--16: Tank experiments, turbidity calibration, iterative algorithm tuning
+    \item Weeks 17--22: Integrated system testing, controller design, robustness testing
+    \item Weeks 23--26+: Final experiments, evaluation, writing and preparation for Thesis B
+\end{itemize}
+
+\subsection{Milestones for Thesis B and C}
+\begin{itemize}
+    \item Thesis B: Demonstrate reliable detection and pose estimation in controlled turbidity; preliminary control loop
+    \item Thesis C: Full integrated docking demonstrations, improved autonomy, field-like trials and comprehensive evaluation
+\end{itemize}

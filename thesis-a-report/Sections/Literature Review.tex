@@ -1,5 +1,58 @@
 \section{Literature Review}
 
-The literature review is not just about presenting descriptions of the important papers you have found, but telling a meaningful story and, where appropriate, some critical discussion of previous findings (i.e. was another study useful but flawed?). Remember that you may read hundreds of papers/books/web pages etc., but often only about 20 or 30 are really important, and these are the ones you will mention in your literature review, which this report will be a concise version of. This section needs to flow logically, and this does not always imply that the material is chronological. By the end, the reader should have a clear appreciation of what the major work in the field was, why it is relevant to the current project, and where the unknowns and questions lie (\textbf{research gaps}) – these are the issues that you are going to address with your thesis research.
+\subsection{Existing Work in AUV/ROV Docking}
+\begin{itemize}
+    \item Surveys of docking strategies for AUVs and ROVs: mechanical, acoustic, vision-based
+    \item Notable AUV docking demonstrations: seabed or moored docking stations, dedicated infrastructure
+    \item ROV docking examples and industrial practices (inspection vehicles, ROV launch/recovery systems)
+    \item Comparison of autonomous (AUV) vs tele-operated (ROV) docking research outcomes
+\end{itemize}
 
-For the purposes of this report, this section will be \textbf{12-15 pages long}. Remember to reference properly any material that you obtain from literature or other sources. If you are unsure how to discuss literature properly, find a really good review paper on your topic, or if there isn’t one, a similar topic, and you will have a good example to refer to.
+\subsection{Vision-Based Docking Techniques}
+\begin{itemize}
+    \item Fiducial markers: AprilTag, ArUco, custom passive markers and their robustness underwater
+    \item Active markers and beacons: LED arrays, modulated light sources, strobe methods
+    \item Learning-based approaches: CNNs for detection and segmentation of docking targets
+    \item Motion/optical-flow and classical feature tracking for relative motion estimation
+    \item Image enhancement and dehazing methods tailored for underwater imagery
+\end{itemize}
+
+\subsection{Other Sensing Methods and Hybrid Systems}
+\begin{itemize}
+    \item Acoustic positioning and homing (USBL, DVL-assisted approaches) and their range/accuracy tradeoffs
+    \item Magnetic homing and mechanical alignment aids
+    \item Sensor fusion strategies combining vision with acoustic, inertial, or range sensors
+    \item Practical hybrid systems used in industry for robust localization
+\end{itemize}
+
+\subsection{Known Limitations in Academic Research}
+\begin{itemize}
+    \item Many studies assume static docks or seabed-mounted stations rather than free-floating platforms
+    \item Experiments often conducted in clear-water laboratory tanks, not turbid field conditions
+    \item Focus on AUV platforms with different constraints compared to ROVs (e.g., velocity profiles, payload)
+    \item Limited work addressing real-time turbidity adaptation or onboard compute constraints
+\end{itemize}
+
+\subsection{ROV-Specific Challenges}
+\begin{itemize}
+    \item Tether dynamics influence vehicle motion and can interfere with docking approaches
+    \item Control latency and operator-in-the-loop behaviors in semi-autonomous systems
+    \item Payload and power constraints for additional sensors and processors onboard ROVs
+    \item Integration challenges with commercial ROV platforms and safety requirements
+\end{itemize}
+
+\subsection{Research Gap}
+\begin{itemize}
+    \item Lack of integrated systems handling free-floating docks with significant relative motion
+    \item Sparse research on turbidity-adaptive vision pipelines validated on ROV platforms
+    \item Few demonstrations combining fiducial/active markers, image enhancement, and control for docking
+    \item Need for end-to-end validation: detection, pose estimation, control, and engagement under realistic conditions
+\end{itemize}
+
+\subsection{How This Project Fits Into the Literature}
+\begin{itemize}
+    \item Positioning the project as addressing free-floating dock dynamics + turbidity adaptation on ROV hardware
+    \item Building on fiducial-based and learning-based detection approaches with targeted robustness improvements
+    \item Aiming to provide experimental validation bridging tank tests and field-like turbidity scenarios
+    \item Contribution: practical system design, evaluation metrics, and recommendations for ROV docking deployments
+\end{itemize}
