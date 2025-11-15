@@ -1,0 +1,17 @@
+% Source - https://stackoverflow.com/a
+% Posted by Avi Parshan
+% Retrieved 2025-11-15, License - CC BY-SA 4.0
+
+## Core latex/pdflatex auxiliary files:
+**/*.aux
+**/*.lof
+**/*.log
+**/*.lot
+**/*.fls
+**/*.out
+**/*.toc
+**/*.fmt
+**/*.fot
+**/*.cb
+**/*.cb2
+**/*.lb

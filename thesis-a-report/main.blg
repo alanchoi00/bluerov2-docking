@@ -1,0 +1,55 @@
+This is BibTeX, Version 0.99d (TeX Live 2025)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: plain.bst
+Database file #1: References.bib
+Repeated entry---line 20 of file References.bib
+ : @inproceedings{evans2001docking
+ :                                ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 30 of file References.bib
+ : @inproceedings{kato1989guidance
+ :                                ,
+I'm skipping whatever remains of this entry
+You've used 6 entries,
+            2118 wiz_defined-function locations,
+            534 strings with 5011 characters,
+and the built_in function-call counts, 1971 in all, are:
+= -- 198
+> -- 69
+< -- 4
++ -- 28
+- -- 22
+* -- 104
+:= -- 319
+add.period$ -- 24
+call.type$ -- 6
+change.case$ -- 27
+chr.to.int$ -- 0
+cite$ -- 6
+duplicate$ -- 94
+empty$ -- 172
+format.name$ -- 22
+if$ -- 435
+int.to.chr$ -- 0
+int.to.str$ -- 6
+missing$ -- 8
+newline$ -- 37
+num.names$ -- 12
+pop$ -- 41
+preamble$ -- 1
+purify$ -- 23
+quote$ -- 0
+skip$ -- 65
+stack$ -- 0
+substring$ -- 94
+swap$ -- 29
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 20
+warning$ -- 0
+while$ -- 18
+width$ -- 7
+write$ -- 76
+(There were 2 error messages)
