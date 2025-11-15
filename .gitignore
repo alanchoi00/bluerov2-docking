@@ -15,3 +15,9 @@
 **/*.cb
 **/*.cb2
 **/*.lb
+**/*.bbl
+**/*.bcf
+**/*.blg
+**/*.nlo
+**/*.synctex.gz
+**/*.fdb_latexmk
