@@ -4,6 +4,7 @@
   "context": "../..",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/blue/ws/src/bluerov2-docking,type=bind",
   "workspaceFolder": "/home/blue/ws/src/bluerov2-docking",
+  "containerUser": "blue",
   "remoteUser": "blue",
   "runArgs": [
     "--network=host",
