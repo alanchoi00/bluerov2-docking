@@ -18,56 +18,79 @@ The free-floating dock is modelled with sinusoidal heave/sway motion in simulati
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
-- [VS Code](https://code.visualstudio.com/) with the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension (`ms-vscode-remote.remote-containers`)
 - For NVIDIA GPU: `nvidia-container-toolkit` installed on the host
 - For Nouveau/Intel GPU: no extra GPU setup required
 
-The dev containers pull a pre-built image from GHCR that includes ROS2 Humble, Gazebo Harmonic, and the [blue](https://github.com/Robotic-Decision-Making-Lab/blue) BlueROV2 packages. No local ROS2 install is needed.
+The containers use a pre-built image from GHCR that includes ROS2 Humble, Gazebo Harmonic, and the [blue](https://github.com/Robotic-Decision-Making-Lab/blue) BlueROV2 packages. No local ROS2 install is needed.
 
-## Dev container setup (Recommended)
+## Docker setup
 
-This is the recommended way to develop. The container mounts the repo into `/home/blue/ws/src/bluerov2-docking` and runs `rosdep install` on first launch.
+Clone the repo first:
 
-1. Clone the repo:
+```bash
+git clone https://github.com/alanchoi00/bluerov2-docking.git
+cd bluerov2-docking
+```
+
+### Docker Compose (recommended)
+
+1. Start the container for your GPU variant:
+
    ```bash
-   git clone https://github.com/alanchoi00/bluerov2-docking.git
-   cd bluerov2-docking
+   # Nouveau/Intel/AMD
+   docker compose -f .docker/compose/nouveau-desktop.yaml up -d
+
+   # NVIDIA
+   docker compose -f .docker/compose/nvidia-desktop.yaml up -d
    ```
 
-2. Open in VS Code:
+2. Open a shell inside the container:
+
+   ```bash
+   # Nouveau
+   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim-humble:humble-desktop --format "{{.Names}}") bash
+
+   # NVIDIA
+   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia --format "{{.Names}}") bash
+   ```
+
+   Or add an alias to your `~/.bashrc` or `~/.zshrc`:
+
+   ```bash
+   alias docking-shell='docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia --format "{{.Names}}") bash'
+   ```
+
+3. Stop the container when done:
+
+   ```bash
+   docker compose -f .docker/compose/nvidia-desktop.yaml down
+   ```
+
+If the base image has been updated, pull before restarting:
+
+```bash
+docker pull ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia
+```
+
+### Dev container (VS Code)
+
+Requires [VS Code](https://code.visualstudio.com/) with the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension (`ms-vscode-remote.remote-containers`).
+
+1. Open the repo in VS Code:
+
    ```bash
    code .
    ```
 
-3. When prompted, select **Reopen in Container** and choose your GPU variant:
+2. When prompted, select **Reopen in Container** and choose your GPU variant:
    - `bluerov2-docking (Nouveau)`: AMD/Intel GPU or no GPU
    - `bluerov2-docking (NVIDIA)`: NVIDIA GPU
 
    VS Code will pull the image, build the container, and run `rosdep install` automatically.
 
-4. Open VSCode terminal and build the workspace inside the container:
+If the base image has been updated, rebuild via the command palette: **Dev Containers: Rebuild Container** (pull the new image with `docker pull` first to avoid a full cache-busting rebuild).
 
-   ```bash
-   cd /home/blue/ws
-   colcon build
-   source install/setup.bash
-   ```
-
-To run commands from an external terminal, add this alias to your `~/.bashrc` or `~/.zshrc` to avoid hassle of finding the docker image name each time:
-
-```bash
-alias docking-shell='docker exec -it $(docker ps --format "{{.Image}} {{.Names}}" | grep bluerov2-docking | awk "{print \$2}") bash'
-```
-
-### Rebuilding the container
-
-If the base image has been updated:
-```bash
-# From VS Code command palette:
-Dev Containers: Rebuild Container Without Cache
-```
-
-## Manual setup (without dev container)
+## Manual setup (without Docker)
 
 > Requires ROS2 Humble and Gazebo Harmonic installed on the host.
 
@@ -154,4 +177,3 @@ Full tutorials from the upstream `blue` package:
 
 - [alanchoi00/blue-sim-humble](https://github.com/alanchoi00/blue-sim-humble): Gazebo simulation (ROS2 Humble fork)
 - [Robotic-Decision-Making-Lab/blue](https://github.com/Robotic-Decision-Making-Lab/blue): upstream blue package
-- [Project board](https://github.com/users/alanchoi00/projects/7)
