@@ -1,0 +1,52 @@
+{
+  "name": "bluerov2-docking (Nouveau)",
+  "dockerFile": "Dockerfile",
+  "context": "../..",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/blue/ws/src/bluerov2-docking,type=bind",
+  "workspaceFolder": "/home/blue/ws/src/bluerov2-docking",
+  "remoteUser": "blue",
+  "runArgs": [
+    "--network=host",
+    "--cap-add=SYS_PTRACE",
+    "--security-opt=seccomp:unconfined",
+    "--security-opt=apparmor:unconfined",
+    "--volume=/dev:/dev",
+    "--privileged",
+    "--volume=/run/user/1000:/run/user/1000"
+  ],
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+    "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
+    "PULSE_SERVER": "${localEnv:PULSE_SERVER}"
+  },
+  "postCreateCommand": "cd /home/blue/ws && rosdep update && rosdep install -y --from-paths src --ignore-src --rosdistro humble --skip-keys='gz-transport12 gz-sim7 gz-math7 gz-msgs9 gz-plugin2'",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.autoComplete.extraPaths": ["/home/blue/ws/install/"],
+        "python.analysis.extraPaths": ["/home/blue/ws/install/"]
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "njpwerner.autodocstring",
+        "redhat.vscode-xml",
+        "redhat.vscode-yaml",
+        "smilerobotics.urdf",
+        "esbenp.prettier-vscode",
+        "charliermarsh.ruff",
+        "josetr.cmake-language-support-vscode",
+        "unifiedjs.vscode-mdx",
+        "nonanonno.vscode-ros2",
+        "Ranch-Hand-Robotics.rde-ros-2",
+        "James-Yu.latex-workshop",
+        "ms-toolsai.jupyter",
+        "eamodio.gitlens",
+        "github.vscode-github-actions",
+        "ms-vscode.cpptools"
+      ]
+    }
+  }
+}
