@@ -15,6 +15,7 @@
     "--privileged",
     "--volume=/tmp/.X11-unix:/tmp/.X11-unix",
     "--volume=/mnt/wslg:/mnt/wslg",
+    "--volume=/run/user/1000:/run/user/1000",
     "--runtime=nvidia",
     "--gpus=all"
   ],
@@ -37,10 +38,12 @@
       "settings": {
         "python.defaultInterpreterPath": "/usr/bin/python3",
         "python.autoComplete.extraPaths": [
-          "/home/blue/ws/install/"
+          "/opt/ros/humble/lib/python3.10/site-packages",
+          "/opt/ros/humble/local/lib/python3.10/dist-packages"
         ],
         "python.analysis.extraPaths": [
-          "/home/blue/ws/install/"
+          "/opt/ros/humble/lib/python3.10/site-packages",
+          "/opt/ros/humble/local/lib/python3.10/dist-packages"
         ]
       },
       "extensions": [
