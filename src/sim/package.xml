@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>sim</name>
+  <version>0.0.1</version>
+  <description>Gazebo simulation environment for BlueROV2 docking experiments</description>
+  <maintainer email="z5413670@ad.unsw.edu.au">Alan Choi</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>blue_sim</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
