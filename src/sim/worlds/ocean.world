@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.6">
-  <world name="docking_world">
+  <world name="ocean_world">
 
     <plugin
       filename="gz-sim-physics-system"
@@ -55,9 +55,8 @@
     </include>
 
     <scene>
-      <ambient>1.0 1.0 1.0</ambient>
-      <background>0.8 0.8 0.8</background>
-      <sky></sky>
+      <ambient>0.0 1.0 1.0</ambient>
+      <background>0.0 0.7 0.8</background>
     </scene>
 
     <light type="directional" name="sun1">
