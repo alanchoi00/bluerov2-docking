@@ -2,21 +2,94 @@
 <sdf version="1.6">
   <model name="docking_station">
     <static>true</static>
+
     <link name="link">
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://docking_station/meshes/dock_station.glb</uri>
+            <uri>model://docking_station/meshes/dock_station.dae</uri>
           </mesh>
         </geometry>
       </visual>
       <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://docking_station/meshes/dock_station.glb</uri>
+            <uri>model://docking_station/meshes/dock_station.dae</uri>
           </mesh>
         </geometry>
       </collision>
     </link>
+
+    <!-- LED array: 4x green emissive spheres at cage front support corners.
+         Model origin: bottom of cage, 310mm behind front face.
+         Cage: 750mm wide x 580mm tall, supports 50mm wide.
+         Axes (Blender convention): X=horizontal, Y=depth (forward=+Y), Z=up.
+         Front face: Y=-0.31m. Corner centres: X=±0.35m, Z=0.025m/0.555m.
+         Tune Y if depth axis differs in exported DAE. -->
+
+    <link name="led_top_left">
+      <pose>-0.35 -0.31 0.555 0 0 0</pose>
+      <visual name="visual">
+        <geometry>
+          <sphere>
+            <radius>0.025</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <ambient>0 1 0.4 1</ambient>
+          <diffuse>0 1 0.4 1</diffuse>
+          <emissive>0 1 0.4 1</emissive>
+        </material>
+      </visual>
+    </link>
+
+    <link name="led_top_right">
+      <pose>0.35 -0.31 0.555 0 0 0</pose>
+      <visual name="visual">
+        <geometry>
+          <sphere>
+            <radius>0.025</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <ambient>0 1 0.4 1</ambient>
+          <diffuse>0 1 0.4 1</diffuse>
+          <emissive>0 1 0.4 1</emissive>
+        </material>
+      </visual>
+    </link>
+
+    <link name="led_bottom_left">
+      <pose>-0.35 -0.31 0.025 0 0 0</pose>
+      <visual name="visual">
+        <geometry>
+          <sphere>
+            <radius>0.025</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <ambient>0 1 0.4 1</ambient>
+          <diffuse>0 1 0.4 1</diffuse>
+          <emissive>0 1 0.4 1</emissive>
+        </material>
+      </visual>
+    </link>
+
+    <link name="led_bottom_right">
+      <pose>0.35 -0.31 0.025 0 0 0</pose>
+      <visual name="visual">
+        <geometry>
+          <sphere>
+            <radius>0.025</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <ambient>0 1 0.4 1</ambient>
+          <diffuse>0 1 0.4 1</diffuse>
+          <emissive>0 1 0.4 1</emissive>
+        </material>
+      </visual>
+    </link>
+
   </model>
 </sdf>
