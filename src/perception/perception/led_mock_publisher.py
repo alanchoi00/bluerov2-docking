@@ -6,8 +6,9 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
-from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import PoseArray, Pose, PointStamped, TransformStamped
+from sensor_msgs.msg import Image, CameraInfo, PointCloud2
+from sensor_msgs.point_cloud2 import create_cloud_xyz32
+from geometry_msgs.msg import PointStamped, TransformStamped
 from nav_msgs.msg import Odometry
 from tf2_ros import Buffer, TransformListener, TransformBroadcaster, TransformException  # type: ignore[attr-defined]
 import tf2_geometry_msgs
@@ -47,7 +48,7 @@ class LedMockPublisher(Node):
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self._tf_broadcaster = TransformBroadcaster(self)
 
-        self._pub = self.create_publisher(PoseArray, "/perception/leds", 10)
+        self._pub = self.create_publisher(PointCloud2, "/perception/leds", 10)
         self._sub = self.create_subscription(
             Image, "/camera/image_raw", self._on_image, 10
         )
@@ -164,7 +165,7 @@ class LedMockPublisher(Node):
         cx, cy = info.k[2], info.k[5]
         w, h = info.width, info.height
 
-        poses = []
+        points = []
         for wp in self._led_world_positions:
             pt = PointStamped()
             pt.header.frame_id = "map"
@@ -187,21 +188,18 @@ class LedMockPublisher(Node):
                 continue
 
             noise = self._rng.normal(0.0, noise_stddev, 3)
-            pose = Pose()
-            pose.position.x = x + float(noise[0])
-            pose.position.y = y + float(noise[1])
-            pose.position.z = z + float(noise[2])
-            pose.orientation.w = 1.0
-            poses.append(pose)
+            points.append((
+                x + float(noise[0]),
+                y + float(noise[1]),
+                z + float(noise[2]),
+            ))
 
-        if not poses:
+        if not points:
             return
 
-        pa = PoseArray()
-        pa.header.frame_id = "camera_link"
-        pa.header.stamp = msg.header.stamp
-        pa.poses = poses
-        self._pub.publish(pa)
+        header = msg.header
+        header.frame_id = "camera_link"
+        self._pub.publish(create_cloud_xyz32(header, points))
 
 
 def main(args=None):

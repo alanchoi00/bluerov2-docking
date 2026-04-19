@@ -16,13 +16,7 @@ class ArucoRelay(Node):
 
         self.create_subscription(
             MarkerArray,
-            "/aruco/slope/detections",
-            self._on_detections,
-            10,
-        )
-        self.create_subscription(
-            MarkerArray,
-            "/aruco/backplate/detections",
+            "/aruco/detections",
             self._on_detections,
             10,
         )
