@@ -16,7 +16,7 @@ def generate_launch_description():
             DeclareLaunchArgument("use_ardusub", default_value="true"),
             DeclareLaunchArgument("flight_mode", default_value="POSHOLD"),
             DeclareLaunchArgument("use_mock_led", default_value="true"),
-            DeclareLaunchArgument("use_aruco", default_value="false"),
+            DeclareLaunchArgument("use_aruco", default_value="true"),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
