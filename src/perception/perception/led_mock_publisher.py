@@ -28,7 +28,7 @@ class LedMockPublisher(Node):
     def __init__(self):
         super().__init__("led_mock_publisher")
 
-        self.declare_parameter("noise_stddev", 0.01)
+        self.declare_parameter("noise_stddev", 0.001)
         self.declare_parameter("detection_distance", 10.0)
         self.declare_parameter("gz_world_name", "ocean_world")
         self.declare_parameter("dock_model_name", "docking_station")
@@ -188,11 +188,13 @@ class LedMockPublisher(Node):
                 continue
 
             noise = self._rng.normal(0.0, noise_stddev, 3)
-            points.append((
-                x + float(noise[0]),
-                y + float(noise[1]),
-                z + float(noise[2]),
-            ))
+            points.append(
+                (
+                    x + float(noise[0]),
+                    y + float(noise[1]),
+                    z + float(noise[2]),
+                )
+            )
 
         if not points:
             return
