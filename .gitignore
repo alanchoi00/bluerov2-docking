@@ -33,5 +33,8 @@
 # Hardware artifacts
 eeprom.bin
 
+# python
+**/*/__pycache__
+
 # Claude's local files
 .claude
