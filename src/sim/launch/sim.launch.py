@@ -2,7 +2,6 @@ from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
-    OpaqueFunction,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -11,22 +10,10 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
-def _launch_aruco(context, *args, **kwargs):
-    if context.launch_configurations.get("use_aruco", "true").lower() not in (
-        "true",
-        "1",
-    ):
-        return []
-    aruco_launch = PathJoinSubstitution(
-        [FindPackageShare("perception"), "launch/aruco.launch.py"]
-    ).perform(context)
-    return [IncludeLaunchDescription(PythonLaunchDescriptionSource(aruco_launch))]
-
-
 def generate_launch_description():
     return LaunchDescription(
         [
-            DeclareLaunchArgument("use_rviz", default_value="false"),
+            DeclareLaunchArgument("use_docking_rviz", default_value="false"),
             DeclareLaunchArgument("use_joy", default_value="false"),
             DeclareLaunchArgument("use_key", default_value="false"),
             DeclareLaunchArgument("use_ardusub", default_value="true"),
@@ -48,7 +35,7 @@ def generate_launch_description():
                     "use_ardusub": LaunchConfiguration("use_ardusub"),
                     "flight_mode": LaunchConfiguration("flight_mode"),
                     "gazebo_world_file": [
-                        PathJoinSubstitution([FindPackageShare("sim"), "worlds"]),
+                        PathJoinSubstitution([FindPackageShare("description"), "worlds"]),
                         "/ocean.world",
                     ],
                 }.items(),
@@ -59,10 +46,10 @@ def generate_launch_description():
                 arguments=[
                     "-d",
                     PathJoinSubstitution(
-                        [FindPackageShare("sim"), "rviz/docking_sim.rviz"]
+                        [FindPackageShare("description"), "rviz/docking_sim.rviz"]
                     ),
                 ],
-                condition=IfCondition(LaunchConfiguration("use_rviz")),
+                condition=IfCondition(LaunchConfiguration("use_docking_rviz")),
                 output="screen",
             ),
             # Needs to add this camera info bridge since 3rd party ardusub_driver only bridges /camera/image_raw
@@ -82,6 +69,13 @@ def generate_launch_description():
                 ),
                 condition=IfCondition(LaunchConfiguration("use_mock_led")),
             ),
-            OpaqueFunction(function=_launch_aruco),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [FindPackageShare("perception"), "launch/aruco.launch.py"]
+                    )
+                ),
+                condition=IfCondition(LaunchConfiguration("use_aruco")),
+            ),
         ]
     )
