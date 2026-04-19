@@ -3,13 +3,14 @@ import rclpy
 from aruco_msgs.msg import ArucoDetection
 from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
+from rclpy.publisher import Publisher
 
 
 class ArucoRelay(Node):
     def __init__(self):
         super().__init__("aruco_relay")
 
-        self._publishers: dict[int, rclpy.publisher.Publisher] = {}
+        self._pose_publishers: dict[int, Publisher] = {}
 
         self.create_subscription(
             ArucoDetection,
@@ -27,9 +28,9 @@ class ArucoRelay(Node):
     def _on_detections(self, msg: ArucoDetection) -> None:
         for marker in msg.markers:
             mid = marker.id
-            if mid not in self._publishers:
+            if mid not in self._pose_publishers:
                 topic = f"/perception/aruco/{mid}"
-                self._publishers[mid] = self.create_publisher(
+                self._pose_publishers[mid] = self.create_publisher(
                     PoseStamped, topic, 10
                 )
                 self.get_logger().info(f"New marker detected, publishing on {topic}")
@@ -37,7 +38,7 @@ class ArucoRelay(Node):
             out = PoseStamped()
             out.header = marker.pose.header
             out.pose = marker.pose.pose.pose
-            self._publishers[mid].publish(out)
+            self._pose_publishers[mid].publish(out)
 
 
 def main(args=None):
