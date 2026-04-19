@@ -1,5 +1,9 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -8,7 +12,10 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def _launch_aruco(context, *args, **kwargs):
-    if context.launch_configurations.get("use_aruco", "false").lower() not in ("true", "1"):
+    if context.launch_configurations.get("use_aruco", "true").lower() not in (
+        "true",
+        "1",
+    ):
         return []
     aruco_launch = PathJoinSubstitution(
         [FindPackageShare("perception"), "launch/aruco.launch.py"]
@@ -25,7 +32,7 @@ def generate_launch_description():
             DeclareLaunchArgument("use_ardusub", default_value="true"),
             DeclareLaunchArgument("flight_mode", default_value="POSHOLD"),
             DeclareLaunchArgument("use_mock_led", default_value="true"),
-            DeclareLaunchArgument("use_aruco", default_value="false"),
+            DeclareLaunchArgument("use_aruco", default_value="true"),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
@@ -34,7 +41,7 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "use_sim": "true",
-                    "use_rviz": LaunchConfiguration("use_rviz"),
+                    "use_rviz": "false",
                     "use_joy": LaunchConfiguration("use_joy"),
                     "use_key": LaunchConfiguration("use_key"),
                     "model": "bluerov2_heavy",
@@ -45,6 +52,18 @@ def generate_launch_description():
                         "/ocean.world",
                     ],
                 }.items(),
+            ),
+            Node(
+                package="rviz2",
+                executable="rviz2",
+                arguments=[
+                    "-d",
+                    PathJoinSubstitution(
+                        [FindPackageShare("sim"), "rviz/docking_sim.rviz"]
+                    ),
+                ],
+                condition=IfCondition(LaunchConfiguration("use_rviz")),
+                output="screen",
             ),
             # Needs to add this camera info bridge since 3rd party ardusub_driver only bridges /camera/image_raw
             Node(
