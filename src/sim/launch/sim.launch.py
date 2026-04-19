@@ -1,10 +1,19 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+
+
+def _launch_aruco(context, *args, **kwargs):
+    if context.launch_configurations.get("use_aruco", "false").lower() not in ("true", "1"):
+        return []
+    aruco_launch = PathJoinSubstitution(
+        [FindPackageShare("perception"), "launch/aruco.launch.py"]
+    ).perform(context)
+    return [IncludeLaunchDescription(PythonLaunchDescriptionSource(aruco_launch))]
 
 
 def generate_launch_description():
@@ -16,7 +25,7 @@ def generate_launch_description():
             DeclareLaunchArgument("use_ardusub", default_value="true"),
             DeclareLaunchArgument("flight_mode", default_value="POSHOLD"),
             DeclareLaunchArgument("use_mock_led", default_value="true"),
-            DeclareLaunchArgument("use_aruco", default_value="true"),
+            DeclareLaunchArgument("use_aruco", default_value="false"),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
@@ -54,13 +63,6 @@ def generate_launch_description():
                 ),
                 condition=IfCondition(LaunchConfiguration("use_mock_led")),
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution(
-                        [FindPackageShare("perception"), "launch/aruco.launch.py"]
-                    )
-                ),
-                condition=IfCondition(LaunchConfiguration("use_aruco")),
-            ),
+            OpaqueFunction(function=_launch_aruco),
         ]
     )
