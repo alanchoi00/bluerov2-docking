@@ -1,12 +1,15 @@
-FROM ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia
+FROM ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia
 
-ENV USERNAME=blue
-ENV USER_WORKSPACE=/home/$USERNAME/ws
+ENV USER_WORKSPACE=/home/ubuntu/ws_docking
 WORKDIR $USER_WORKSPACE
 
 # Install debugging/linting tools
-RUN python3 -m pip install \
+RUN /home/ubuntu/.venv/blue/bin/pip install \
     pre-commit \
     mypy
+
+RUN apt-get update && apt-get install -y \
+    ros-jazzy-aruco-ros \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONWARNINGS="ignore"
