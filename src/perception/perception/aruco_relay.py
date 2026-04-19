@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import rclpy
 from aruco_msgs.msg import MarkerArray
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 from rclpy.node import Node
 from rclpy.publisher import Publisher as rclpyPublisher
+from tf2_ros import TransformBroadcaster
 
 
 class ArucoRelay(Node):
@@ -11,6 +12,7 @@ class ArucoRelay(Node):
         super().__init__(node_name="aruco_relay")
 
         self._pose_publishers: dict[int, rclpyPublisher] = {}
+        self._tf_broadcaster = TransformBroadcaster(self)
 
         self.create_subscription(
             MarkerArray,
@@ -39,6 +41,15 @@ class ArucoRelay(Node):
             out.header = marker.header
             out.pose = marker.pose.pose
             self._pose_publishers[mid].publish(out)
+
+            tf = TransformStamped()
+            tf.header = marker.header
+            tf.child_frame_id = f"aruco_{mid}"
+            tf.transform.translation.x = marker.pose.pose.position.x
+            tf.transform.translation.y = marker.pose.pose.position.y
+            tf.transform.translation.z = marker.pose.pose.position.z
+            tf.transform.rotation = marker.pose.pose.orientation
+            self._tf_broadcaster.sendTransform(tf)
 
 
 def main(args=None):
