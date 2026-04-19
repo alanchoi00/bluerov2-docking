@@ -2,10 +2,10 @@
   "name": "bluerov2-docking (NVIDIA)",
   "dockerFile": "Dockerfile",
   "context": "../..",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/home/blue/ws/src/bluerov2-docking,type=bind",
-  "workspaceFolder": "/home/blue/ws/src/bluerov2-docking",
-  "containerUser": "blue",
-  "remoteUser": "blue",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/ubuntu/ws_docking/src/bluerov2-docking,type=bind",
+  "workspaceFolder": "/home/ubuntu/ws_docking/src/bluerov2-docking",
+  "containerUser": "ubuntu",
+  "remoteUser": "ubuntu",
   "runArgs": [
     "--network=host",
     "--cap-add=SYS_PTRACE",
@@ -32,18 +32,25 @@
     "__GLX_VENDOR_LIBRARY_NAME": "nvidia",
     "__VK_LAYER_NV_optimus": "NVIDIA_only"
   },
-  "postCreateCommand": "cd /home/blue/ws && rosdep update && rosdep install -y --from-paths src --ignore-src --rosdistro humble --skip-keys='gz-transport12 gz-sim7 gz-math7 gz-msgs9 gz-plugin2'",
+  "remoteEnv": {
+    "PATH": "/home/ubuntu/.venv/blue/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": "sudo chown ubuntu:ubuntu /home/ubuntu/ws_docking && cd /home/ubuntu/ws_docking && rosdep update && rosdep install -y --from-paths src --ignore-src --rosdistro jazzy --skip-keys='gz-transport13 gz-sim8 gz-math7 gz-msgs10 gz-plugin2' && . /home/ubuntu/ws_blue/install/setup.sh && colcon build --symlink-install",
   "customizations": {
     "vscode": {
       "settings": {
         "python.defaultInterpreterPath": "/usr/bin/python3",
         "python.autoComplete.extraPaths": [
-          "/opt/ros/humble/lib/python3.10/site-packages",
-          "/opt/ros/humble/local/lib/python3.10/dist-packages"
+          "/opt/ros/jazzy/lib/python3.12/site-packages",
+          "/opt/ros/jazzy/local/lib/python3.12/dist-packages",
+          "/home/ubuntu/ws_blue/install/lib/python3.12/site-packages",
+          "/home/ubuntu/ws_docking/install/lib/python3.12/site-packages"
         ],
         "python.analysis.extraPaths": [
-          "/opt/ros/humble/lib/python3.10/site-packages",
-          "/opt/ros/humble/local/lib/python3.10/dist-packages"
+          "/opt/ros/jazzy/lib/python3.12/site-packages",
+          "/opt/ros/jazzy/local/lib/python3.12/dist-packages",
+          "/home/ubuntu/ws_blue/install/lib/python3.12/site-packages",
+          "/home/ubuntu/ws_docking/install/lib/python3.12/site-packages"
         ]
       },
       "extensions": [
@@ -63,7 +70,8 @@
         "ms-toolsai.jupyter",
         "eamodio.gitlens",
         "github.vscode-github-actions",
-        "ms-vscode.cpptools"
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
       ]
     }
   }

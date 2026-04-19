@@ -48,16 +48,16 @@ cd bluerov2-docking
 
    ```bash
    # Nouveau
-   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim-humble:humble-desktop --format "{{.Names}}") bash
+   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim:jazzy-desktop --format "{{.Names}}") bash
 
    # NVIDIA
-   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia --format "{{.Names}}") bash
+   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia --format "{{.Names}}") bash
    ```
 
    Or add an alias to your `~/.bashrc` or `~/.zshrc`:
 
    ```bash
-   alias docking-shell='docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia --format "{{.Names}}") bash'
+   alias docking-shell='docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia --format "{{.Names}}") bash'
    ```
 
 3. Stop the container when done:
@@ -69,7 +69,7 @@ cd bluerov2-docking
 If the base image has been updated, pull before restarting:
 
 ```bash
-docker pull ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia
+docker pull ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia
 ```
 
 ### Dev container (VS Code)
@@ -92,26 +92,13 @@ If the base image has been updated, rebuild via the command palette: **Dev Conta
 
 ## Manual setup (without Docker)
 
-> Requires ROS2 Humble and Gazebo Harmonic installed on the host.
+> Requires ROS2 Jazzy and Gazebo Harmonic installed on the host.
 
-```bash
-git clone https://github.com/alanchoi00/bluerov2-docking.git
-
-mkdir -p ~/ws/src
-cd ~/ws/src
-ln -s /path/to/bluerov2-docking/src bluerov2-docking
-
-cd ~/ws
-rosdep install -y --from-paths src --ignore-src --rosdistro humble \
-  --skip-keys="gz-transport12 gz-sim7 gz-math7 gz-msgs9 gz-plugin2"
-
-colcon build
-source install/setup.bash
-```
+TODO: detail manual setup.
 
 ## Simulation
 
-The Gazebo simulation environment is provided by [alanchoi00/blue-sim-humble](https://github.com/alanchoi00/blue-sim-humble), a ROS2 Humble fork of the upstream [blue](https://github.com/Robotic-Decision-Making-Lab/blue) package. Pre-built Docker images are published to GHCR and are used as the base for the dev containers in this repo.
+The Gazebo simulation environment is provided by [alanchoi00/blue-sim](https://github.com/alanchoi00/blue-sim), a ROS2 Humble fork of the upstream [blue](https://github.com/Robotic-Decision-Making-Lab/blue) package. Pre-built Docker images are published to GHCR and are used as the base for the dev containers in this repo.
 
 ### Launch the vehicle
 
@@ -175,5 +162,5 @@ Full tutorials from the upstream `blue` package:
 
 ## Related
 
-- [alanchoi00/blue-sim-humble](https://github.com/alanchoi00/blue-sim-humble): Gazebo simulation (ROS2 Humble fork)
+- [alanchoi00/blue-sim](https://github.com/alanchoi00/blue-sim): Gazebo simulation (ROS2 Humble fork)
 - [Robotic-Decision-Making-Lab/blue](https://github.com/Robotic-Decision-Making-Lab/blue): upstream blue package

@@ -1,6 +1,6 @@
 services:
   blue:
-    image: ghcr.io/alanchoi00/blue-sim-humble:humble-desktop-nvidia
+    image: ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia
     environment:
       - DISPLAY=${DISPLAY}
       - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
@@ -28,5 +28,6 @@ services:
       - /mnt/wslg:/mnt/wslg
       - type: bind
         source: ../../
-        target: /home/blue/ws/src/bluerov2-docking
+        target: /home/ubuntu/ws_docking/src/bluerov2-docking
+    working_dir: /home/ubuntu/ws_docking
     command: tail -f /dev/null
