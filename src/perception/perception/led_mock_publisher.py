@@ -7,7 +7,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
-from sensor_msgs.point_cloud2 import create_cloud_xyz32
+from sensor_msgs_py.point_cloud2 import create_cloud_xyz32
 from geometry_msgs.msg import PointStamped, TransformStamped
 from nav_msgs.msg import Odometry
 from tf2_ros import Buffer, TransformListener, TransformBroadcaster, TransformException  # type: ignore[attr-defined]
