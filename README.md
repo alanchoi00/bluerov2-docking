@@ -1,40 +1,55 @@
-# bluerov2-docking
+# bluerov2-docking :anchor:
 
-Autonomous docking of a BlueROV2 to a free-floating underwater station using vision-based guidance. UNSW Thesis research project.
+ROS2 simulation and perception stack for autonomous BlueROV2 underwater docking using ArUco markers and LED detection. UNSW Thesis research project.
 
 ## Overview
 
-The system uses a two-level visual guidance pipeline to guide the ROV through a sequence of docking behaviours:
+The system uses a two-level visual guidance pipeline:
 
 | Level | Guidance | Range | Method |
 |-------|----------|-------|--------|
-| I | Coarse approach | Long range | LED cue detection (YOLO) -> centroid-based IBVS |
-| II | Fine alignment | Close range | ArUco/AprilTag PnP -> 6-DOF pose error PID |
+| I | Coarse approach | Long range | LED cluster detection -> centroid-based IBVS |
+| II | Fine alignment | Close range | ArUco PnP -> 6-DOF pose error |
 
-A state machine manages mode transitions: `SEARCHING -> COARSE_APPROACH -> FINE_ALIGNMENT -> ENGAGE -> DOCKED` (with `ABORT` fallback).
+### Packages
 
-The free-floating dock is modelled with sinusoidal heave/sway motion in simulation to emulate a cable-suspended structure. Pose estimates are temporally filtered (Kalman or complementary) to account for update-rate limitations and dropout.
+| Package | Description |
+|---------|-------------|
+| `description` | Docking station Gazebo model, world file, RViz config |
+| `sim` | Simulation launch file |
+| `perception` | LED mock publisher, ArUco detection relay |
 
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
-- For NVIDIA GPU: `nvidia-container-toolkit` installed on the host
-- For Nouveau/Intel GPU: no extra GPU setup required
+- NVIDIA GPU: `nvidia-container-toolkit` on the host
+- Nouveau/Intel/AMD: no extra GPU setup required
 
-The containers use a pre-built image from GHCR that includes ROS2 Humble, Gazebo Harmonic, and the [blue](https://github.com/Robotic-Decision-Making-Lab/blue) BlueROV2 packages. No local ROS2 install is needed.
+## Setup
 
-## Docker setup
-
-Clone the repo first:
+Clone the repo:
 
 ```bash
 git clone https://github.com/alanchoi00/bluerov2-docking.git
 cd bluerov2-docking
 ```
 
-### Docker Compose (recommended)
+### Dev container (recommended)
 
-1. Start the container for your GPU variant:
+Requires [VS Code](https://code.visualstudio.com/) with the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
+
+1. Open the repo in VS Code and select **Reopen in Container** when prompted.
+2. Choose your GPU variant:
+   - `bluerov2-docking (Nouveau)`: AMD/Intel or no GPU
+   - `bluerov2-docking (NVIDIA)`: NVIDIA GPU
+
+VS Code will pull the image, build the container, and run `rosdep install` + `colcon build` automatically. The workspace is mounted so edits in VS Code are reflected inside the container immediately.
+
+To update: pull the new image with `docker pull`, then run **Dev Containers: Rebuild Container** from the command palette.
+
+### Docker Compose
+
+1. Start the container:
 
    ```bash
    # Nouveau/Intel/AMD
@@ -44,123 +59,59 @@ cd bluerov2-docking
    docker compose -f .docker/compose/nvidia-desktop.yaml up -d
    ```
 
-2. Open a shell inside the container:
+2. Open a shell and build:
 
    ```bash
-   # Nouveau
-   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim:jazzy-desktop --format "{{.Names}}") bash
-
-   # NVIDIA
-   docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia --format "{{.Names}}") bash
+   docker exec -it <container_name> bash
+   cd /home/ubuntu/ws_docking
+   rosdep install -y --from-paths src --ignore-src --rosdistro jazzy \
+     --skip-keys='gz-transport13 gz-sim8 gz-math7 gz-msgs10 gz-plugin2'
+   colcon build --symlink-install
+   source install/setup.bash
    ```
 
-   Or add an alias to your `~/.bashrc` or `~/.zshrc`:
+3. Stop when done:
 
    ```bash
-   alias docking-shell='docker exec -it $(docker ps --filter ancestor=ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia --format "{{.Names}}") bash'
+   docker compose -f .docker/compose/nouveau-desktop.yaml down
    ```
 
-3. Stop the container when done:
-
-   ```bash
-   docker compose -f .docker/compose/nvidia-desktop.yaml down
-   ```
-
-If the base image has been updated, pull before restarting:
+To update the base image:
 
 ```bash
-docker pull ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia
+docker pull ghcr.io/alanchoi00/blue-sim:jazzy-desktop        # Nouveau
+docker pull ghcr.io/alanchoi00/blue-sim:jazzy-desktop-nvidia  # NVIDIA
 ```
-
-### Dev container (VS Code)
-
-Requires [VS Code](https://code.visualstudio.com/) with the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension (`ms-vscode-remote.remote-containers`).
-
-1. Open the repo in VS Code:
-
-   ```bash
-   code .
-   ```
-
-2. When prompted, select **Reopen in Container** and choose your GPU variant:
-   - `bluerov2-docking (Nouveau)`: AMD/Intel GPU or no GPU
-   - `bluerov2-docking (NVIDIA)`: NVIDIA GPU
-
-   VS Code will pull the image, build the container, and run `rosdep install` automatically.
-
-If the base image has been updated, rebuild via the command palette: **Dev Containers: Rebuild Container** (pull the new image with `docker pull` first to avoid a full cache-busting rebuild).
-
-## Manual setup (without Docker)
-
-> Requires ROS2 Jazzy and Gazebo Harmonic installed on the host.
-
-TODO: detail manual setup.
 
 ## Simulation
 
-The Gazebo simulation environment is provided by [alanchoi00/blue-sim](https://github.com/alanchoi00/blue-sim), a ROS2 Humble fork of the upstream [blue](https://github.com/Robotic-Decision-Making-Lab/blue) package. Pre-built Docker images are published to GHCR and are used as the base for the dev containers in this repo.
+The Gazebo environment is built on [alanchoi00/blue-sim](https://github.com/alanchoi00/blue-sim) (ROS2 Jazzy). Pre-built Docker images are published to GHCR.
 
-### Launch the vehicle
+### Launch
 
 ```bash
-# BlueROV2 Heavy (8 thrusters) in Gazebo
-ros2 launch blue_bringup bluerov2_heavy.launch.yaml use_sim:=true
-
-# Standard BlueROV2 (6 thrusters)
-ros2 launch blue_bringup bluerov2.launch.yaml use_sim:=true
+ros2 launch sim sim.launch.py
 ```
 
-Wait for the line `[mavros.param]: PR: parameters list received` before sending commands.
-
-### Key launch arguments
+### Launch arguments
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `use_sim` | `false` | Enable Gazebo + ArduSub SITL |
-| `use_sim_time` | `false` | Use Gazebo clock |
-| `use_rviz` | `false` | Open RViz |
-| `use_camera` | `false` | Enable camera stream |
-| `localization_source` | `gazebo` | Pose source: `gazebo`, `mocap`, or `camera` |
-| `gazebo_world_file` | `underwater.world` | Gazebo world to load |
+| `use_ardusub` | `true` | Start ArduSub SITL + MAVROS bridge |
+| `flight_mode` | `POSHOLD` | ArduSub flight mode |
+| `use_joy` | `false` | Joystick teleop |
+| `use_key` | `false` | Keyboard teleop |
+| `use_mock_led` | `true` | Publish simulated LED point cloud |
+| `use_aruco` | `true` | Run ArUco marker detection |
+| `use_docking_rviz` | `false` | Open RViz with docking config |
 
-### Launch with controllers
+E.g., launch without ArduSub for faster startup:
 
-Terminal 1:
 ```bash
-ros2 launch blue_demos bluerov2_demo.launch.yaml use_sim:=true
+ros2 launch sim sim.launch.py use_ardusub:=false use_docking_rviz:=true
 ```
-
-Terminal 2 (after MAVROS connects):
-```bash
-ros2 launch blue_demos bluerov2_controllers.launch.py use_sim:=true
-```
-
-Verify:
-```bash
-ros2 control list_controllers
-```
-
-### Teleoperation
-
-Keyboard:
-```bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
-```
-
-Gamepad:
-```bash
-ros2 launch blue_demos joy_teleop.launch.yaml
-```
-
-### Upstream documentation
-
-Full tutorials from the upstream `blue` package:
-
-- [Simulation](https://robotic-decision-making-lab.github.io/blue/tutorials/simulation)
-- [Control](https://robotic-decision-making-lab.github.io/blue/tutorials/control)
-- [Teleoperation](https://robotic-decision-making-lab.github.io/blue/tutorials/teleop/)
 
 ## Related
 
-- [alanchoi00/blue-sim](https://github.com/alanchoi00/blue-sim): Gazebo simulation (ROS2 Humble fork)
+- [alanchoi00/blue-sim](https://github.com/alanchoi00/blue-sim): Gazebo simulation base
 - [Robotic-Decision-Making-Lab/blue](https://github.com/Robotic-Decision-Making-Lab/blue): upstream blue package
