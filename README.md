@@ -23,6 +23,7 @@ The system uses a two-level visual guidance pipeline:
 
 ## Prerequisites
 
+- **x86_64 (amd64) host required** — the base image and ArduSub SITL have no ARM builds. Mac (Apple Silicon) and ARM VMs are not supported.
 - [Docker](https://docs.docker.com/get-docker/)
 - NVIDIA GPU: `nvidia-container-toolkit` on the host
 - Nouveau/Intel/AMD: no extra GPU setup required
