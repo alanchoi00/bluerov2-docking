@@ -16,6 +16,12 @@ Panels:
         - /Aruco 3051
         - /Aruco 4011
         - /Aruco 4021
+        - /Dock Position (unfiltered)1
+        - /Dock Position1
+        - /Dock Station1
+        - /Dock Station1/Status1
+        - /Dock Station1/Topic1
+        - /Dock Station1/Namespaces1
       Splitter Ratio: 0.5
     Tree Height: 737
   - Class: rviz_common/Selection
@@ -29,7 +35,6 @@ Panels:
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
-      - /Current View1/Position1
     Name: Views
     Splitter Ratio: 0.5
   - Class: rviz_common/Time
@@ -398,11 +403,94 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /perception/aruco_402
       Value: true
+    - Alpha: 1
+      Axes Length: 0.5
+      Axes Radius: 0.019999999552965164
+      Class: rviz_default_plugins/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: false
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Dock Position (unfiltered)
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /perception/aruco_dock_pose
+      Value: false
+    - Alpha: 1
+      Axes Length: 0.5
+      Axes Radius: 0.019999999552965164
+      Class: rviz_default_plugins/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Dock Position
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /perception/dock_pose_filtered
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Dock Station
+      Namespaces:
+        dock_filtered: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /perception/dock_visualization
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 220; 231; 255
     Fixed Frame: base_link
-    Frame Rate: 30
+    Frame Rate: 60
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
@@ -443,25 +531,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz_default_plugins/FrameAligned
+      Class: rviz_default_plugins/Orbit
+      Distance: 1.5
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
+      Focal Point:
+        X: 0.0402219295501709
+        Y: -0.015604674816131592
+        Z: 0.09049421548843384
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
-      Lock Camera: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3750006854534149
-      Point towards: -z axis
-      Position:
-        X: -1
-        Y: 0
-        Z: 0.5
+      Pitch: 0.3050006031990051
       Target Frame: <Fixed Frame>
-      Value: FrameAligned (rviz_default_plugins)
-      Yaw: 6.268185138702393
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 3.1815006732940674
     Saved:
       - Class: rviz_default_plugins/FrameAligned
         Enable Stereo Rendering:
