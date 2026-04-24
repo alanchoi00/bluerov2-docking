@@ -35,7 +35,9 @@ def generate_launch_description():
                     "use_ardusub": LaunchConfiguration("use_ardusub"),
                     "flight_mode": LaunchConfiguration("flight_mode"),
                     "gazebo_world_file": [
-                        PathJoinSubstitution([FindPackageShare("description"), "worlds"]),
+                        PathJoinSubstitution(
+                            [FindPackageShare("description"), "worlds"]
+                        ),
                         "/ocean.world",
                     ],
                 }.items(),
@@ -75,6 +77,9 @@ def generate_launch_description():
                         [FindPackageShare("perception"), "launch/aruco.launch.py"]
                     )
                 ),
+                launch_arguments={
+                    "target_frame": "map",
+                }.items(),
                 condition=IfCondition(LaunchConfiguration("use_aruco")),
             ),
         ]
