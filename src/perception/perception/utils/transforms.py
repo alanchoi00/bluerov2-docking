@@ -5,12 +5,12 @@ def apply_dock_pose(xyz, rpy, led_offsets):
     """Transform LED offsets from dock-local frame to world frame.
 
     Args:
-        xyz: sequence of 3 floats [x, y, z] metres — dock translation in world
-        rpy: sequence of 3 floats [roll, pitch, yaw] radians — dock rotation
-        led_offsets: array-like of shape (N, 3) — LED positions in dock frame
+        xyz: sequence of 3 floats [x, y, z] metres dock translation in world
+        rpy: sequence of 3 floats [roll, pitch, yaw] radians dock rotation
+        led_offsets: array-like of shape (N, 3) LED positions in dock frame
 
     Returns:
-        numpy array of shape (N, 3) — LED positions in world frame
+        numpy array of shape (N, 3) LED positions in world frame
     """
     roll, pitch, yaw = rpy
     cr, sr = np.cos(roll), np.sin(roll)

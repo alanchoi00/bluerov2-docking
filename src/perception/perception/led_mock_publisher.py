@@ -38,7 +38,7 @@ class LedMockPublisher(Node):
         self._led_world_positions = self._fetch_led_poses_from_gz()
         if self._led_world_positions is None:
             self.get_logger().warn(
-                "Could not fetch LED poses from Gazebo — using zero positions"
+                "Could not fetch LED poses from Gazebo using zero positions"
             )
             self._led_world_positions = [[0.0, 0.0, 0.0]] * 4
 
