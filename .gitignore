@@ -30,6 +30,11 @@
 .vscode/browse.vc.db-wal
 .vscode/c_cpp_properties.json
 
+build/
+install/
+log/
+logs/
+
 # Hardware artifacts
 eeprom.bin
 
