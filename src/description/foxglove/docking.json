@@ -1,0 +1,67 @@
+{
+  "configById": {
+    "3D!dock": {
+      "followMode": "follow-pose",
+      "followTf": "map",
+      "scene": { "transforms": { "showLabel": true } },
+      "topics": {
+        "/robot_description": { "visible": true },
+        "/perception/dock_visualization": { "visible": true },
+        "/perception/dock_pose_filtered": { "visible": true },
+        "/perception/aruco_dock_pose": { "visible": true },
+        "/perception/leds": { "visible": true }
+      },
+      "layers": {},
+      "cameraState": {
+        "distance": 6,
+        "perspective": true,
+        "phi": 65,
+        "thetaOffset": 45,
+        "targetOffset": [0, 0, 0],
+        "target": [0, 0, 0],
+        "fovy": 45,
+        "near": 0.01,
+        "far": 5000
+      }
+    },
+    "Image!aruco": {
+      "imageTopic": "/arucos/result",
+      "calibrationTopic": "/camera/camera_info",
+      "synchronize": false
+    },
+    "Plot!poseerr": {
+      "title": "Dock pose (filtered) in target frame",
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "paths": [
+        { "value": "/perception/dock_pose_filtered.pose.pose.position.x", "enabled": true, "timestampMethod": "receiveTime" },
+        { "value": "/perception/dock_pose_filtered.pose.pose.position.y", "enabled": true, "timestampMethod": "receiveTime" },
+        { "value": "/perception/dock_pose_filtered.pose.pose.position.z", "enabled": true, "timestampMethod": "receiveTime" }
+      ]
+    },
+    "Log!rosout": {
+      "topicToRender": "/rosout",
+      "minLogLevel": 1,
+      "searchTerms": []
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": { "speed": 1 },
+  "layout": {
+    "direction": "row",
+    "first": {
+      "direction": "column",
+      "first": "3D!dock",
+      "second": "Image!aruco",
+      "splitPercentage": 60
+    },
+    "second": {
+      "direction": "column",
+      "first": "Plot!poseerr",
+      "second": "Log!rosout",
+      "splitPercentage": 60
+    },
+    "splitPercentage": 58
+  }
+}

@@ -4,7 +4,7 @@ project(description)
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY models worlds rviz
+  DIRECTORY models worlds rviz foxglove
   DESTINATION share/${PROJECT_NAME}
 )
 
