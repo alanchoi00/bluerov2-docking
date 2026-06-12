@@ -1,0 +1,13 @@
+kp_surge: 1.0
+kp_sway: 0.8
+kd_sway: 0.3
+kp_heave: 0.8
+kd_heave: 0.3
+kp_yaw: 1.0
+kd_yaw: 0.3
+handoff_range_m: 0.5
+surge_taper_range_m: 0.25
+v_max_surge: 0.8
+v_max_sway: 0.6
+v_max_heave: 0.6
+v_max_yaw: 0.8
