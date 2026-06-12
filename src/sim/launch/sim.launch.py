@@ -88,7 +88,15 @@ def generate_launch_description():
             Node(
                 package="foxglove_bridge",
                 executable="foxglove_bridge",
-                parameters=[{"use_sim_time": True, "port": 8765}],
+                parameters=[
+                    {
+                        "use_sim_time": True,
+                        "port": 8765,
+                        # Serve package:// and file:// mesh assets so the dock DAE
+                        # marker and the robot URDF meshes load in the 3D panel.
+                        "asset_uri_allowlist": ["^package://.*", "^file://.*"],
+                    }
+                ],
                 condition=IfCondition(LaunchConfiguration("use_foxglove")),
                 output="screen",
             ),
