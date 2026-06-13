@@ -1,67 +1,298 @@
 {
   "configById": {
-    "3D!dock": {
-      "followMode": "follow-pose",
-      "followTf": "map",
-      "scene": { "transforms": { "showLabel": true } },
+    "3D!vb5f7v": {
       "topics": {
-        "/robot_description": { "visible": true },
-        "/perception/dock_visualization": { "visible": true },
-        "/perception/dock_pose_filtered": { "visible": true },
-        "/perception/aruco_dock_pose": { "visible": true },
-        "/perception/leds": { "visible": true }
+        "/perception/leds": {
+          "visible": true,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/perception/dock_visualization": {
+          "visible": true,
+          "showOutlines": false,
+          "color": "#2000eeff"
+        },
+        "/robot_description": {
+          "visible": true,
+          "displayMode": "auto",
+          "showOutlines": false,
+          "showAxis": false
+        }
       },
-      "layers": {},
+      "layers": {
+        "9ace85fd-daa0-485f-b1cc-66dd66fff6a0": {
+          "layerId": "foxglove.Grid",
+          "instanceId": "9ace85fd-daa0-485f-b1cc-66dd66fff6a0"
+        }
+      },
       "cameraState": {
-        "distance": 6,
         "perspective": true,
-        "phi": 65,
-        "thetaOffset": 45,
-        "targetOffset": [0, 0, 0],
-        "target": [0, 0, 0],
+        "distance": 2.5702431313004683,
+        "phi": 71.30493404165628,
+        "thetaOffset": 90.4154672427622,
+        "targetOffset": [
+          0.8464620497430096,
+          -0.03863399792824959,
+          3.4732601415676166e-17
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
         "fovy": 45,
-        "near": 0.01,
+        "near": 0.5,
         "far": 5000
-      }
+      },
+      "followMode": "follow-pose",
+      "scene": {
+        "enableStats": false,
+        "ignoreColladaUpAxis": false,
+        "syncCamera": true,
+        "backgroundColor": "#100d28",
+        "labelScaleFactor": 0
+      },
+      "transforms": {
+        "frame:": {
+          "visible": false
+        },
+        "frame:base_footprint": {
+          "visible": false
+        },
+        "frame:odom": {
+          "visible": false
+        },
+        "frame:odom_ned": {
+          "visible": false
+        },
+        "frame:thruster1": {
+          "visible": false
+        },
+        "frame:thruster2": {
+          "visible": false
+        },
+        "frame:thruster3": {
+          "visible": false
+        },
+        "frame:thruster4": {
+          "visible": false
+        },
+        "frame:thruster5": {
+          "visible": false
+        },
+        "frame:thruster6": {
+          "visible": false
+        },
+        "frame:thruster7": {
+          "visible": false
+        },
+        "frame:thruster8": {
+          "visible": false
+        },
+        "frame:map_ned": {
+          "visible": false
+        },
+        "frame:map": {
+          "visible": false
+        },
+        "frame:base_link": {
+          "visible": false
+        },
+        "frame:base_link_frd": {
+          "visible": false
+        },
+        "frame:base_link_fsd": {
+          "visible": false
+        },
+        "frame:camera_mount_link": {
+          "visible": false
+        },
+        "frame:camera_link": {
+          "visible": false
+        }
+      },
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "synchronize": false,
+      "imageMode": {},
+      "followTf": "base_link"
     },
-    "Image!aruco": {
-      "imageTopic": "/arucos/result",
-      "calibrationTopic": "/camera/camera_info",
+    "TransformTree!20rx75x": {},
+    "Image!30kciis": {
+      "imageMode": {
+        "imageTopic": "/arucos/result/compressed"
+      },
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 60,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
       "synchronize": false
     },
-    "Plot!poseerr": {
-      "title": "Dock pose (filtered) in target frame",
-      "xAxisVal": "timestamp",
-      "showLegend": true,
+    "Plot!5q4au1": {
       "paths": [
-        { "value": "/perception/dock_pose_filtered.pose.pose.position.x", "enabled": true, "timestampMethod": "receiveTime" },
-        { "value": "/perception/dock_pose_filtered.pose.pose.position.y", "enabled": true, "timestampMethod": "receiveTime" },
-        { "value": "/perception/dock_pose_filtered.pose.pose.position.z", "enabled": true, "timestampMethod": "receiveTime" }
+        {
+          "value": "/cmd_vel.angular.x",
+          "enabled": true,
+          "color": "#5cd6a9",
+          "id": "d32bd5b3-448b-46e1-a51f-c33d5968ad31"
+        },
+        {
+          "value": "/cmd_vel.angular.y",
+          "enabled": true,
+          "color": "#61cbff",
+          "id": "777c48fd-756f-4385-858a-1a3094a3a1e7"
+        },
+        {
+          "value": "/cmd_vel.angular.z",
+          "enabled": true,
+          "color": "#a395e2",
+          "id": "9955a977-4fcf-4947-ad89-c78a578f4e41"
+        }
+      ],
+      "showLegend": false,
+      "foxglovePanelTitle": "/cmd_vel"
+    },
+    "Plot!tnf67a": {
+      "paths": [
+        {
+          "value": "/mavros/global_position/compass_hdg.data",
+          "enabled": true,
+          "color": "#cad660",
+          "id": "47624d28-08eb-4625-abe0-12dbb73a2e82"
+        }
+      ],
+      "showLegend": false,
+      "foxglovePanelTitle": "/mavros/global_position/compass_hdg"
+    },
+    "Plot!38ckkkz": {
+      "paths": [
+        {
+          "value": "/mavros/global_position/rel_alt.data",
+          "enabled": true,
+          "color": "#4e98e2",
+          "id": "7f617264-f545-41cf-94b3-05f64a8d38a5"
+        }
+      ],
+      "showLegend": false,
+      "foxglovePanelTitle": "/mavros/global_position/rel_alt"
+    },
+    "DiagnosticSummary!4ghga9i": {
+      "topicToRender": "/diagnostics",
+      "minLevel": 0,
+      "pinnedIds": [],
+      "hardwareIdFilter": "",
+      "sortByLevel": true,
+      "secondsUntilStale": 5
+    },
+    "RawMessages!3b4374b": {
+      "topicPath": "/perception/dock_pose_filtered",
+      "defaultExpanded": false
+    },
+    "Tab!2dqadhn": {
+      "activeTabIdx": 0,
+      "tabs": [
+        {
+          "title": "Scene",
+          "layout": "3D!vb5f7v"
+        },
+        {
+          "title": "Transforms",
+          "layout": "TransformTree!20rx75x"
+        }
       ]
     },
-    "Log!rosout": {
-      "topicToRender": "/rosout",
-      "minLogLevel": 1,
-      "searchTerms": []
+    "Tab!3ofs9ss": {
+      "activeTabIdx": 0,
+      "tabs": [
+        {
+          "title": "Overview",
+          "layout": {
+            "direction": "column",
+            "first": "Image!30kciis",
+            "second": {
+              "direction": "column",
+              "first": {
+                "direction": "column",
+                "first": "Plot!5q4au1",
+                "second": {
+                  "direction": "column",
+                  "first": "Plot!tnf67a",
+                  "second": "Plot!38ckkkz",
+                  "splitPercentage": 50
+                },
+                "splitPercentage": 33.333333333333336
+              },
+              "second": {
+                "direction": "row",
+                "first": "DiagnosticSummary!4ghga9i",
+                "second": "RawMessages!3b4374b",
+                "splitPercentage": 50
+              },
+              "splitPercentage": 56.57077798861481
+            },
+            "splitPercentage": 34.24667931688805
+          }
+        }
+      ]
     }
   },
-  "globalVariables": {},
-  "userNodes": {},
-  "playbackConfig": { "speed": 1 },
   "layout": {
-    "direction": "row",
-    "first": {
-      "direction": "column",
-      "first": "3D!dock",
-      "second": "Image!aruco",
-      "splitPercentage": 60
-    },
-    "second": {
-      "direction": "column",
-      "first": "Plot!poseerr",
-      "second": "Log!rosout",
-      "splitPercentage": 60
-    },
-    "splitPercentage": 58
-  }
+    "first": "Tab!2dqadhn",
+    "second": "Tab!3ofs9ss",
+    "direction": "row"
+  },
+  "globalVariables": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "userNodes": {}
 }
