@@ -17,7 +17,7 @@ The system uses a two-level visual guidance pipeline:
 
 | Package | Description |
 |---------|-------------|
-| `description` | Docking station Gazebo model, world file, RViz config |
+| `description` | Docking station Gazebo model, world file, RViz + Foxglove configs |
 | `sim` | Simulation launch file |
 | `perception` | LED mock publisher, ArUco detection relay |
 
@@ -107,12 +107,23 @@ ros2 launch sim sim.launch.py
 | `use_mock_led` | `true` | Publish simulated LED point cloud |
 | `use_aruco` | `true` | Run ArUco marker detection |
 | `use_docking_rviz` | `false` | Open RViz with docking config |
+| `use_foxglove` | `false` | Start `foxglove_bridge` (WebSocket on port 8765) |
 
 E.g., launch without ArduSub for faster startup:
 
 ```bash
 ros2 launch sim sim.launch.py use_ardusub:=false use_docking_rviz:=true
 ```
+
+### Foxglove
+
+[Foxglove](https://foxglove.dev/) (free tier) or [Lichtblick](https://github.com/lichtblick-suite/lichtblick) gives a single window for live 3D, camera, plots, logs, and MCAP replay — sharing the same WebSocket protocol, so either viewer works.
+
+```bash
+ros2 launch sim sim.launch.py use_foxglove:=true
+```
+
+Connect the viewer to `ws://localhost:8765` (open connection -> **Foxglove WebSocket**; the dev container runs with `--network=host`), then open the layout `src/description/foxglove/docking.json` from the app.
 
 ## Related
 

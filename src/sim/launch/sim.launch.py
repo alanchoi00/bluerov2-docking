@@ -20,6 +20,7 @@ def generate_launch_description():
             DeclareLaunchArgument("flight_mode", default_value="POSHOLD"),
             DeclareLaunchArgument("use_mock_led", default_value="true"),
             DeclareLaunchArgument("use_aruco", default_value="true"),
+            DeclareLaunchArgument("use_foxglove", default_value="false"),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
@@ -81,6 +82,23 @@ def generate_launch_description():
                     "target_frame": "map",
                 }.items(),
                 condition=IfCondition(LaunchConfiguration("use_aruco")),
+            ),
+            # Foxglove bridge: WebSocket server (ws://localhost:8765) for the
+            # Foxglove/Lichtblick viewer. Open description/foxglove/docking.json.
+            Node(
+                package="foxglove_bridge",
+                executable="foxglove_bridge",
+                parameters=[
+                    {
+                        "use_sim_time": True,
+                        "port": 8765,
+                        # Serve package:// and file:// mesh assets so the dock DAE
+                        # marker and the robot URDF meshes load in the 3D panel.
+                        "asset_uri_allowlist": ["^package://.*", "^file://.*"],
+                    }
+                ],
+                condition=IfCondition(LaunchConfiguration("use_foxglove")),
+                output="screen",
             ),
         ]
     )

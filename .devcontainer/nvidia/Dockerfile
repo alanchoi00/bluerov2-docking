@@ -11,6 +11,7 @@ RUN /home/ubuntu/.venv/blue/bin/pip install \
 USER root
 RUN apt-get update && apt-get install -y \
     ros-jazzy-aruco-ros \
+    ros-jazzy-foxglove-bridge \
     && rm -rf /var/lib/apt/lists/*
 USER ubuntu
 
