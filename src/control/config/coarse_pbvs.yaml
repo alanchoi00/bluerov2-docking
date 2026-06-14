@@ -1,0 +1,34 @@
+coarse_approach:
+  ros__parameters:
+    use_sim_time: true
+
+    # --- #29 tuned gains (CoarsePbvsParams field names, verbatim) ---
+    kp_surge: 1.0
+    kp_sway: 0.8
+    kd_sway: 0.3
+    kp_heave: 0.8
+    kd_heave: 0.3
+    kp_yaw: 1.0
+    kd_yaw: 0.3
+    handoff_range_m: 0.0
+    surge_taper_range_m: 0.25
+    v_max_surge: 0.5
+    v_max_sway: 0.3
+    v_max_heave: 0.3
+    v_max_yaw: 0.5
+
+    # --- guidance ---
+    target_frame: "map"
+    aim_offset_in_dock: [0.0, 0.310, 0.042]   # 401/402 midpoint (dock_layout.py)
+    standoff_distance_m: 1.0
+
+    # --- phase tolerances ---
+    position_tol_m: 0.10
+    axis_offset_tol_m: 0.10
+    heading_tol_rad: 0.10
+    ready_debounce_cycles: 10
+
+    # --- health + timing ---
+    degraded_gain_scale: 0.5
+    control_rate_hz: 20.0
+    max_pose_age_s: 1.0
