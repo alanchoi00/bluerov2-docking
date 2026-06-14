@@ -1,12 +1,18 @@
 """Black-box tests for the pure health gate and phase decision."""
 
 from control.health_gate import (
-    GateResult,
-    WARMING_UP,
-    HEALTHY,
+    APPROACHING,
+    AT_STANDOFF,
+    BLOCKED,
     DEGRADED,
+    GateResult,
+    HEALTHY,
     STALE,
+    Tolerances,
+    WARMING_UP,
+    decide_phase,
     gate_for_health,
+    within_tolerances,
 )
 
 
@@ -28,3 +34,54 @@ def test_stale_blocks():
 def test_warming_up_blocks():
     g = gate_for_health(WARMING_UP, degraded_gain_scale=0.5)
     assert g.blocked is True and g.gain_scale == 0.0
+
+
+_TOL = Tolerances(
+    position_m=0.10, axis_offset_m=0.10, heading_rad=0.10, debounce_cycles=3
+)
+
+
+def test_within_tolerances_true_when_all_small():
+    wp, wh = within_tolerances(
+        range_to_standoff_m=0.05, axis_offset_m=0.02, heading_err_rad=0.03, tol=_TOL
+    )
+    assert wp is True and wh is True
+
+
+def test_within_tolerances_false_when_off_axis():
+    wp, wh = within_tolerances(
+        range_to_standoff_m=0.05, axis_offset_m=0.30, heading_err_rad=0.03, tol=_TOL
+    )
+    assert wp is False and wh is True
+
+
+def test_blocked_phase_overrides():
+    phase, ready, counter = decide_phase(
+        blocked=True, within_pos=True, within_head=True, healthy=True,
+        ready_counter=10, tol=_TOL,
+    )
+    assert phase == BLOCKED and ready is False and counter == 0
+
+
+def test_phase_debounces_to_at_standoff():
+    # Three consecutive ready cycles needed (debounce_cycles=3).
+    counter = 0
+    for _ in range(2):
+        phase, ready, counter = decide_phase(
+            blocked=False, within_pos=True, within_head=True, healthy=True,
+            ready_counter=counter, tol=_TOL,
+        )
+        assert phase == APPROACHING and ready is False
+    phase, ready, counter = decide_phase(
+        blocked=False, within_pos=True, within_head=True, healthy=True,
+        ready_counter=counter, tol=_TOL,
+    )
+    assert phase == AT_STANDOFF and ready is True
+
+
+def test_phase_resets_counter_when_out_of_tol():
+    phase, ready, counter = decide_phase(
+        blocked=False, within_pos=False, within_head=True, healthy=True,
+        ready_counter=2, tol=_TOL,
+    )
+    assert phase == APPROACHING and ready is False and counter == 0
