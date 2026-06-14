@@ -21,6 +21,7 @@ def generate_launch_description():
             DeclareLaunchArgument("use_mock_led", default_value="true"),
             DeclareLaunchArgument("use_aruco", default_value="true"),
             DeclareLaunchArgument("use_foxglove", default_value="false"),
+            DeclareLaunchArgument("use_control", default_value="false"),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
@@ -99,6 +100,15 @@ def generate_launch_description():
                 ],
                 condition=IfCondition(LaunchConfiguration("use_foxglove")),
                 output="screen",
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [FindPackageShare("control"), "launch/coarse_approach.launch.py"]
+                    )
+                ),
+                launch_arguments={"target_frame": "map"}.items(),
+                condition=IfCondition(LaunchConfiguration("use_control")),
             ),
         ]
     )
