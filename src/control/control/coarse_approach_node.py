@@ -33,7 +33,7 @@ class CoarseApproach(Node):
         assert hg.BLOCKED == CoarseApproachStatus.BLOCKED
 
         self.declare_parameter("target_frame", "map")
-        self.declare_parameter("aim_offset_in_dock", [0.0, 0.310, 0.042])
+        self.declare_parameter("aim_offset_in_dock", [0.0, 0.0, 0.0])
         self.declare_parameter("standoff_distance_m", 1.0)
         self.declare_parameter("position_tol_m", 0.10)
         self.declare_parameter("axis_offset_tol_m", 0.10)
@@ -45,8 +45,8 @@ class CoarseApproach(Node):
         for name, default in (
             ("kp_surge", 1.0), ("kp_sway", 0.8), ("kd_sway", 0.3),
             ("kp_heave", 0.8), ("kd_heave", 0.3), ("kp_yaw", 1.0), ("kd_yaw", 0.3),
-            ("handoff_range_m", 0.0), ("surge_taper_range_m", 0.25),
-            ("v_max_surge", 0.5), ("v_max_sway", 0.3),
+            ("handoff_range_m", 0.0), ("surge_taper_range_m", 0.05),
+            ("v_max_surge", 0.3), ("v_max_sway", 0.3),
             ("v_max_heave", 0.3), ("v_max_yaw", 0.5),
         ):
             self.declare_parameter(name, default)

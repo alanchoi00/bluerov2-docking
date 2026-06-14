@@ -11,15 +11,15 @@ coarse_approach:
     kp_yaw: 1.0
     kd_yaw: 0.3
     handoff_range_m: 0.0
-    surge_taper_range_m: 0.25
-    v_max_surge: 0.5
+    surge_taper_range_m: 0.05
+    v_max_surge: 0.3
     v_max_sway: 0.3
     v_max_heave: 0.3
     v_max_yaw: 0.5
 
     # --- guidance ---
     target_frame: "map"
-    aim_offset_in_dock: [0.0, 0.310, 0.042]   # 401/402 midpoint (dock_layout.py)
+    aim_offset_in_dock: [0.0, 0.0, 0.0]   # target the dock pose directly (base_link aligns to dock frame; no camera-frame offset)
     standoff_distance_m: 1.0
 
     # --- phase tolerances ---
