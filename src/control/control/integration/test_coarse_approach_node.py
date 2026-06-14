@@ -1,0 +1,117 @@
+"""Integration test: coarse_approach node.
+
+Publishes synthetic dock_pose_filtered + health + a static TF map->base_link,
+asserts cmd_vel and CoarseApproachStatus behave per phase."""
+
+import math
+import threading
+import time
+
+import pytest
+import rclpy
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from geometry_msgs.msg import PoseWithCovarianceStamped, Twist, TransformStamped
+from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
+
+from interfaces.msg import FilterHealth, CoarseApproachStatus
+
+_RELIABLE = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE, history=HistoryPolicy.KEEP_LAST, depth=10
+)
+
+
+@pytest.fixture
+def ros_context():
+    rclpy.init()
+    yield
+    rclpy.shutdown()
+
+
+class _Harness(Node):
+    def __init__(self):
+        super().__init__("coarse_test_harness")
+        self._pose_pub = self.create_publisher(
+            PoseWithCovarianceStamped, "/perception/dock_pose_filtered", _RELIABLE
+        )
+        self._health_pub = self.create_publisher(
+            FilterHealth, "/perception/dock_pose_filtered/health", _RELIABLE
+        )
+        self.cmds: list[Twist] = []
+        self.status: list[CoarseApproachStatus] = []
+        self.create_subscription(Twist, "/cmd_vel", self.cmds.append, _RELIABLE)
+        self.create_subscription(
+            CoarseApproachStatus,
+            "/control/coarse_approach/status",
+            self.status.append,
+            _RELIABLE,
+        )
+        self._tf = StaticTransformBroadcaster(self)
+
+    def send_tf(self, x, y, z, qx, qy, qz, qw):
+        tf = TransformStamped()
+        tf.header.stamp = self.get_clock().now().to_msg()
+        tf.header.frame_id = "map"
+        tf.child_frame_id = "base_link"
+        tf.transform.translation.x = float(x)
+        tf.transform.translation.y = float(y)
+        tf.transform.translation.z = float(z)
+        tf.transform.rotation.x = float(qx)
+        tf.transform.rotation.y = float(qy)
+        tf.transform.rotation.z = float(qz)
+        tf.transform.rotation.w = float(qw)
+        self._tf.sendTransform(tf)
+
+    def publish_dock(self, x, y, z, qx=0.0, qy=0.0, qz=0.0, qw=1.0):
+        m = PoseWithCovarianceStamped()
+        m.header.stamp = self.get_clock().now().to_msg()
+        m.header.frame_id = "map"
+        m.pose.pose.position.x = float(x)
+        m.pose.pose.position.y = float(y)
+        m.pose.pose.position.z = float(z)
+        m.pose.pose.orientation.x = float(qx)
+        m.pose.pose.orientation.y = float(qy)
+        m.pose.pose.orientation.z = float(qz)
+        m.pose.pose.orientation.w = float(qw)
+        self._pose_pub.publish(m)
+
+    def publish_health(self, status):
+        h = FilterHealth()
+        h.header.stamp = self.get_clock().now().to_msg()
+        h.status = status
+        self._health_pub.publish(h)
+
+
+def _spin(*nodes, seconds):
+    ex = SingleThreadedExecutor()
+    for n in nodes:
+        ex.add_node(n)
+    stop = threading.Event()
+    t = threading.Thread(
+        target=lambda: [
+            ex.spin_once(timeout_sec=0.02)
+            for _ in iter(lambda: not stop.is_set(), False)
+        ],
+        daemon=True,
+    )
+    t.start()
+    time.sleep(seconds)
+    stop.set()
+    t.join(timeout=1.0)
+
+
+def test_blocked_and_zero_cmd_before_any_pose(ros_context):
+    from control.coarse_approach_node import CoarseApproach
+
+    node = CoarseApproach()
+    harness = _Harness()
+    _spin(node, harness, seconds=1.0)
+
+    assert harness.cmds, "expected cmd_vel to be published on the timer"
+    last = harness.cmds[-1]
+    assert last.linear.x == 0.0 and last.angular.z == 0.0
+    assert harness.status and harness.status[-1].phase == CoarseApproachStatus.BLOCKED
+
+    node.destroy_node()
+    harness.destroy_node()
