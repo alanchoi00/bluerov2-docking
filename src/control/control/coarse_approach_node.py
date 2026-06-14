@@ -24,8 +24,11 @@ class CoarseApproach(Node):
         super().__init__("coarse_approach")
 
         # Fail fast if the pure mirrors drift from the generated message.
+        assert hg.WARMING_UP == FilterHealth.WARMING_UP
         assert hg.HEALTHY == FilterHealth.HEALTHY
+        assert hg.DEGRADED == FilterHealth.DEGRADED
         assert hg.STALE == FilterHealth.STALE
+        assert hg.APPROACHING == CoarseApproachStatus.APPROACHING
         assert hg.AT_STANDOFF == CoarseApproachStatus.AT_STANDOFF
         assert hg.BLOCKED == CoarseApproachStatus.BLOCKED
 
