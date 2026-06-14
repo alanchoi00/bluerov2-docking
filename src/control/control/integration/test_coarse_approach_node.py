@@ -115,3 +115,74 @@ def test_blocked_and_zero_cmd_before_any_pose(ros_context):
 
     node.destroy_node()
     harness.destroy_node()
+
+
+def _params_overrides():
+    import rclpy.parameter
+
+    P = rclpy.parameter.Parameter
+    return [
+        P("standoff_distance_m", P.Type.DOUBLE, 1.0),
+        P("ready_debounce_cycles", P.Type.INTEGER, 2),
+    ]
+
+
+def _spin_while_feeding(node, harness, feed, *, iterations, period):
+    ex = SingleThreadedExecutor()
+    ex.add_node(node)
+    ex.add_node(harness)
+    stop = threading.Event()
+    t = threading.Thread(
+        target=lambda: [
+            ex.spin_once(timeout_sec=0.02)
+            for _ in iter(lambda: not stop.is_set(), False)
+        ],
+        daemon=True,
+    )
+    t.start()
+    for _ in range(iterations):
+        feed()
+        time.sleep(period)
+    stop.set()
+    t.join(timeout=1.0)
+
+
+def test_approaches_when_healthy_and_off_target(ros_context):
+    from control.coarse_approach_node import CoarseApproach
+
+    node = CoarseApproach()
+    node.set_parameters(_params_overrides())
+    harness = _Harness()
+    harness.send_tf(0, 0, 0, 0, 0, 0, 1)
+
+    def feed():
+        harness.publish_dock(3.0, 0.0, 0.0)
+        harness.publish_health(FilterHealth.HEALTHY)
+
+    _spin_while_feeding(node, harness, feed, iterations=20, period=0.05)
+
+    moving = [c for c in harness.cmds if c.linear.x > 0.0]
+    assert moving, "expected positive surge toward the dock"
+    assert any(s.phase == CoarseApproachStatus.APPROACHING for s in harness.status)
+    node.destroy_node()
+    harness.destroy_node()
+
+
+def test_blocks_on_stale_health(ros_context):
+    from control.coarse_approach_node import CoarseApproach
+
+    node = CoarseApproach()
+    harness = _Harness()
+    harness.send_tf(0, 0, 0, 0, 0, 0, 1)
+
+    def feed():
+        harness.publish_dock(3.0, 0.0, 0.0)
+        harness.publish_health(FilterHealth.STALE)
+
+    _spin_while_feeding(node, harness, feed, iterations=15, period=0.05)
+
+    assert harness.cmds, "expected cmd_vel to be published on the timer"
+    assert harness.cmds[-1].linear.x == 0.0
+    assert harness.status[-1].phase == CoarseApproachStatus.BLOCKED
+    node.destroy_node()
+    harness.destroy_node()

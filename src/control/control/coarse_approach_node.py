@@ -6,11 +6,11 @@ filtered dock pose (#34). Publishes body-frame cmd_vel + CoarseApproachStatus.
 Fixed-rate timer always emits a command (zero when BLOCKED) so ardusub_bridge
 never re-sends a stale command."""
 
-import numpy as np
 import rclpy
 from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.time import Time
 from tf2_ros import Buffer, TransformListener, TransformException
 
 from control.pbvs import CoarsePbvsController, CoarsePbvsParams
@@ -48,6 +48,9 @@ class CoarseApproach(Node):
         ):
             self.declare_parameter(name, default)
 
+        # Gains are snapshotted here at construction; changing a gain parameter
+        # at runtime requires a node restart. Tolerances (see _tolerances) are
+        # re-read live each tick so they can be tuned in-mission.
         self._controller = CoarsePbvsController(self._params())
         self._ready_counter = 0
         self._latest_pose: PoseWithCovarianceStamped | None = None
@@ -93,12 +96,31 @@ class CoarseApproach(Node):
             v_max_heave=g("v_max_heave"), v_max_yaw=g("v_max_yaw"),
         )
 
+    def _tolerances(self) -> hg.Tolerances:
+        gi = lambda n: self.get_parameter(n).get_parameter_value().integer_value
+        gd = lambda n: self.get_parameter(n).get_parameter_value().double_value
+        return hg.Tolerances(
+            position_m=gd("position_tol_m"),
+            axis_offset_m=gd("axis_offset_tol_m"),
+            heading_rad=gd("heading_tol_rad"),
+            debounce_cycles=gi("ready_debounce_cycles"),
+        )
+
     def _on_pose(self, msg: PoseWithCovarianceStamped) -> None:
         self._latest_pose = msg
         self._latest_pose_t = self.get_clock().now().nanoseconds * 1e-9
 
     def _on_health(self, msg: FilterHealth) -> None:
         self._latest_health = int(msg.status)
+
+    def _pose_too_old(self) -> bool:
+        if self._latest_pose_t is None:
+            return True
+        age = self.get_clock().now().nanoseconds * 1e-9 - self._latest_pose_t
+        max_age = self.get_parameter("max_pose_age_s").get_parameter_value().double_value
+        # Negative age means the clock jumped backwards (e.g. sim reset): treat
+        # the cached pose as untrustworthy and block until a fresh one arrives.
+        return age < 0.0 or age > max_age
 
     def _publish_zero(self, phase: int) -> None:
         self._pub_cmd.publish(Twist())
@@ -109,11 +131,111 @@ class CoarseApproach(Node):
         st.ready_for_handoff = False
         self._pub_status.publish(st)
 
-    def _tick(self) -> None:
-        # Task 8 fills in the regulating path. Until then: always BLOCKED + zero.
+    def _block(self) -> None:
+        # reset() clears the PD derivative memory so a resumed approach does not
+        # see a spurious error jump across the blocked gap.
         self._controller.reset()
         self._ready_counter = 0
         self._publish_zero(CoarseApproachStatus.BLOCKED)
+
+    def _tick(self) -> None:
+        if (
+            self._latest_pose is None
+            or self._latest_health is None
+            or self._pose_too_old()
+        ):
+            self._block()
+            return
+
+        scale = (
+            self.get_parameter("degraded_gain_scale")
+            .get_parameter_value()
+            .double_value
+        )
+        gate = hg.gate_for_health(self._latest_health, scale)
+        if gate.blocked:
+            self._block()
+            return
+
+        target_frame = (
+            self.get_parameter("target_frame").get_parameter_value().string_value
+        )
+        try:
+            # Time() = latest available transform; ROV TF staleness is
+            # acceptable for coarse approach (avoids a measurement-stamp deadlock).
+            tf = self._tf_buffer.lookup_transform(target_frame, "base_link", Time())
+        except TransformException as exc:
+            self.get_logger().warn(
+                f"TF {target_frame}->base_link unavailable: {exc}",
+                throttle_duration_sec=2.0,
+            )
+            self._block()
+            return
+
+        p = self._latest_pose.pose.pose
+        rov = tf.transform
+        aim_offset = (
+            self.get_parameter("aim_offset_in_dock")
+            .get_parameter_value()
+            .double_array_value
+        )
+        standoff = (
+            self.get_parameter("standoff_distance_m").get_parameter_value().double_value
+        )
+
+        g = guidance_lib.compute_guidance(
+            dock_pos=(p.position.x, p.position.y, p.position.z),
+            dock_quat_xyzw=(
+                p.orientation.x,
+                p.orientation.y,
+                p.orientation.z,
+                p.orientation.w,
+            ),
+            rov_pos=(rov.translation.x, rov.translation.y, rov.translation.z),
+            rov_quat_xyzw=(
+                rov.rotation.x,
+                rov.rotation.y,
+                rov.rotation.z,
+                rov.rotation.w,
+            ),
+            aim_offset_in_dock=list(aim_offset),
+            standoff_distance_m=standoff,
+        )
+
+        cmd = self._controller.step(g.rel_pos_body, g.yaw_err, self._dt)
+
+        twist = Twist()
+        twist.linear.x = cmd.surge * gate.gain_scale
+        twist.linear.y = cmd.sway * gate.gain_scale
+        twist.linear.z = cmd.heave * gate.gain_scale
+        twist.angular.z = cmd.yaw_rate * gate.gain_scale
+        self._pub_cmd.publish(twist)
+
+        tol = self._tolerances()
+        within_pos, within_head = hg.within_tolerances(
+            g.range_to_standoff_m, g.axis_offset_m, g.yaw_err, tol
+        )
+        phase, ready, self._ready_counter = hg.decide_phase(
+            blocked=False,
+            within_pos=within_pos,
+            within_head=within_head,
+            healthy=gate.dock_healthy,
+            ready_counter=self._ready_counter,
+            tol=tol,
+        )
+
+        st = CoarseApproachStatus()
+        st.header.stamp = self.get_clock().now().to_msg()
+        st.phase = phase
+        st.range_to_standoff_m = g.range_to_standoff_m
+        st.axis_offset_m = g.axis_offset_m
+        st.vertical_error_m = g.vertical_error_m
+        st.heading_error_rad = g.yaw_err
+        st.within_position_tol = within_pos
+        st.within_heading_tol = within_head
+        st.dock_healthy = gate.dock_healthy
+        st.ready_for_handoff = ready
+        self._pub_status.publish(st)
 
 
 def main(args=None):
