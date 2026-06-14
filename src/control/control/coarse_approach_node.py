@@ -7,7 +7,7 @@ Fixed-rate timer always emits a command (zero when BLOCKED) so ardusub_bridge
 never re-sends a stale command."""
 
 import rclpy
-from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
+from geometry_msgs.msg import Twist, PoseStamped, PoseWithCovarianceStamped
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from rclpy.time import Time
@@ -48,6 +48,7 @@ class CoarseApproach(Node):
             ("handoff_range_m", 0.0), ("surge_taper_range_m", 0.05),
             ("v_max_surge", 0.3), ("v_max_sway", 0.3),
             ("v_max_heave", 0.3), ("v_max_yaw", 0.5),
+            ("ki_sway", 0.5), ("ki_heave", 0.5), ("i_max", 1.0),
         ):
             self.declare_parameter(name, default)
 
@@ -71,6 +72,9 @@ class CoarseApproach(Node):
         self._pub_cmd = self.create_publisher(Twist, "/cmd_vel", qos)
         self._pub_status = self.create_publisher(
             CoarseApproachStatus, "/control/coarse_approach/status", qos
+        )
+        self._pub_standoff = self.create_publisher(
+            PoseStamped, "/control/coarse_approach/standoff_pose", qos
         )
         self.create_subscription(
             PoseWithCovarianceStamped,
@@ -97,6 +101,7 @@ class CoarseApproach(Node):
             surge_taper_range_m=g("surge_taper_range_m"),
             v_max_surge=g("v_max_surge"), v_max_sway=g("v_max_sway"),
             v_max_heave=g("v_max_heave"), v_max_yaw=g("v_max_yaw"),
+            ki_sway=g("ki_sway"), ki_heave=g("ki_heave"), i_max=g("i_max"),
         )
 
     def _tolerances(self) -> hg.Tolerances:
@@ -141,7 +146,44 @@ class CoarseApproach(Node):
         self._ready_counter = 0
         self._publish_zero(CoarseApproachStatus.BLOCKED)
 
+    def _publish_standoff(self) -> None:
+        # Visualization only: the target standoff pose (position + desired
+        # boresight heading) in the target frame, regardless of gating.
+        p = self._latest_pose.pose.pose
+        aim_offset = (
+            self.get_parameter("aim_offset_in_dock")
+            .get_parameter_value()
+            .double_array_value
+        )
+        standoff = (
+            self.get_parameter("standoff_distance_m").get_parameter_value().double_value
+        )
+        pos, quat = guidance_lib.standoff_pose_in_target(
+            dock_pos=(p.position.x, p.position.y, p.position.z),
+            dock_quat_xyzw=(
+                p.orientation.x,
+                p.orientation.y,
+                p.orientation.z,
+                p.orientation.w,
+            ),
+            aim_offset_in_dock=list(aim_offset),
+            standoff_distance_m=standoff,
+        )
+        msg = PoseStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = self._latest_pose.header.frame_id
+        msg.pose.position.x = float(pos[0])
+        msg.pose.position.y = float(pos[1])
+        msg.pose.position.z = float(pos[2])
+        msg.pose.orientation.x = float(quat[0])
+        msg.pose.orientation.y = float(quat[1])
+        msg.pose.orientation.z = float(quat[2])
+        msg.pose.orientation.w = float(quat[3])
+        self._pub_standoff.publish(msg)
+
     def _tick(self) -> None:
+        if self._latest_pose is not None:
+            self._publish_standoff()
         if (
             self._latest_pose is None
             or self._latest_health is None

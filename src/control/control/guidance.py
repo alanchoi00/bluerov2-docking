@@ -74,3 +74,21 @@ def compute_guidance(
         axis_offset_m=axis_offset,
         vertical_error_m=float(rel_pos_body[2]),
     )
+
+
+def standoff_pose_in_target(
+    dock_pos,
+    dock_quat_xyzw,
+    aim_offset_in_dock,
+    standoff_distance_m: float,
+):
+    """Standoff point + desired ROV heading in the target frame, for viz.
+
+    Returns (position ndarray, quaternion xyzw tuple). Desired heading aligns
+    body +X with the dock boresight (dock +Y), i.e. facing into the dock."""
+    r_dock = Rotation.from_quat(list(dock_quat_xyzw))
+    pos = standoff_point_in_target(
+        dock_pos, dock_quat_xyzw, aim_offset_in_dock, standoff_distance_m
+    )
+    desired = r_dock * Rotation.from_euler("z", math.pi / 2)
+    return pos, tuple(float(q) for q in desired.as_quat())

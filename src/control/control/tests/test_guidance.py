@@ -4,7 +4,11 @@ import math
 
 import numpy as np
 
-from control.guidance import compute_guidance, standoff_point_in_target
+from control.guidance import (
+    compute_guidance,
+    standoff_point_in_target,
+    standoff_pose_in_target,
+)
 
 AIM_OFFSET = (0.0, 0.310, 0.042)  # 401/402 midpoint in dock frame
 
@@ -81,3 +85,17 @@ def test_axis_offset_detects_off_boresight():
         standoff_distance_m=1.0,
     )
     assert math.isclose(g.axis_offset_m, 0.5, abs_tol=1e-6)
+
+
+def test_standoff_pose_identity_dock_faces_boresight():
+    pos, quat = standoff_pose_in_target(
+        dock_pos=(0.0, 0.0, 0.0),
+        dock_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        aim_offset_in_dock=AIM_OFFSET,
+        standoff_distance_m=1.0,
+    )
+    assert np.allclose(pos, [0.0, -0.690, 0.042], atol=1e-6)
+    # desired heading = +90deg about Z (body +X -> dock +Y) -> (0,0,sin45,cos45)
+    assert np.allclose(
+        quat, [0.0, 0.0, math.sin(math.pi / 4), math.cos(math.pi / 4)], atol=1e-6
+    )
