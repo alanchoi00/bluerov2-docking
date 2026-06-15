@@ -137,16 +137,6 @@ def test_blocked_and_zero_cmd_before_any_pose(ros_context):
     harness.destroy_node()
 
 
-def _params_overrides():
-    import rclpy.parameter
-
-    P = rclpy.parameter.Parameter
-    return [
-        P("standoff_distance_m", P.Type.DOUBLE, 1.0),
-        P("ready_debounce_cycles", P.Type.INTEGER, 2),
-    ]
-
-
 def _spin_while_feeding(node, harness, feed, *, iterations, period):
     ex = SingleThreadedExecutor()
     ex.add_node(node)
@@ -171,7 +161,6 @@ def test_approaches_when_healthy_and_off_target(ros_context):
     from control.coarse_approach_node import CoarseApproach
 
     node = CoarseApproach(parameter_overrides=_load_params())
-    node.set_parameters(_params_overrides())
     harness = _Harness()
     harness.send_tf(0, 0, 0, 0, 0, 0, 1)
 
