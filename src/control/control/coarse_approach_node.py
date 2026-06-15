@@ -14,7 +14,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformListener, TransformException
 
-from control.pbvs import CoarsePbvsController, CoarsePbvsParams
+from control.pbvs import CoarsePbvsController, CoarsePbvsParams, approach_speed_limit
 from control import guidance as guidance_lib
 from control import health_gate as hg
 from interfaces.msg import FilterHealth, CoarseApproachStatus
@@ -39,19 +39,21 @@ class CoarseApproach(Node):
         self.declare_parameter("aim_offset_in_dock", ptype.DOUBLE_ARRAY)
         self.declare_parameter("ready_debounce_cycles", ptype.INTEGER)
         for name in (
-            "standoff_distance_m", "heading_blend_range_m",
+            "standoff_distance_m",
             "position_tol_m", "axis_offset_tol_m",
             "heading_tol_rad", "degraded_gain_scale", "control_rate_hz",
             "max_pose_age_s",
             "kp_surge", "kp_sway", "kd_sway", "kp_heave", "kd_heave",
-            "kp_yaw", "kd_yaw", "handoff_range_m", "surge_taper_range_m",
+            "kp_yaw", "kd_yaw",
             "v_max_surge", "v_max_sway", "v_max_heave", "v_max_yaw",
+            "approach_speed_slope", "approach_speed_floor",
         ):
             self.declare_parameter(name, ptype.DOUBLE)
 
         # gains are read once here; tolerances are read live each tick
         self._controller = CoarsePbvsController(self._params())
         self._ready_counter = 0
+        self._ready = False
         self._latest_pose: PoseWithCovarianceStamped | None = None
         self._latest_pose_t: float | None = None
         self._latest_health: int | None = None
@@ -92,8 +94,6 @@ class CoarseApproach(Node):
             kp_surge=g("kp_surge"), kp_sway=g("kp_sway"), kd_sway=g("kd_sway"),
             kp_heave=g("kp_heave"), kd_heave=g("kd_heave"),
             kp_yaw=g("kp_yaw"), kd_yaw=g("kd_yaw"),
-            handoff_range_m=g("handoff_range_m"),
-            surge_taper_range_m=g("surge_taper_range_m"),
             v_max_surge=g("v_max_surge"), v_max_sway=g("v_max_sway"),
             v_max_heave=g("v_max_heave"), v_max_yaw=g("v_max_yaw"),
         )
@@ -136,6 +136,7 @@ class CoarseApproach(Node):
         # reset clears controller state so a resumed approach has no stale jump
         self._controller.reset()
         self._ready_counter = 0
+        self._ready = False
         self._publish_zero(CoarseApproachStatus.BLOCKED)
 
     def _publish_standoff(self) -> None:
@@ -217,11 +218,6 @@ class CoarseApproach(Node):
         standoff = (
             self.get_parameter("standoff_distance_m").get_parameter_value().double_value
         )
-        blend = (
-            self.get_parameter("heading_blend_range_m")
-            .get_parameter_value()
-            .double_value
-        )
 
         g = guidance_lib.compute_guidance(
             dock_pos=(p.position.x, p.position.y, p.position.z),
@@ -240,13 +236,23 @@ class CoarseApproach(Node):
             ),
             aim_offset_in_dock=list(aim_offset),
             standoff_distance_m=standoff,
-            heading_blend_range_m=blend,
         )
 
         cmd = self._controller.step(g.rel_pos_body, g.yaw_err, self._dt)
 
+        # distance-gated surge cap: bound the approach speed by distance to the
+        # dock so it slows progressively and limits worst-case collision speed.
+        gd = lambda n: self.get_parameter(n).get_parameter_value().double_value
+        surge_cap = approach_speed_limit(
+            g.range_to_dock_m,
+            gd("approach_speed_slope"),
+            gd("approach_speed_floor"),
+            gd("v_max_surge"),
+        )
+        surge = max(-surge_cap, min(cmd.surge, surge_cap))
+
         twist = Twist()
-        twist.linear.x = cmd.surge * gate.gain_scale
+        twist.linear.x = surge * gate.gain_scale
         twist.linear.y = cmd.sway * gate.gain_scale
         twist.linear.z = cmd.heave * gate.gain_scale
         twist.angular.z = cmd.yaw_rate * gate.gain_scale
@@ -262,8 +268,10 @@ class CoarseApproach(Node):
             within_head=within_head,
             healthy=gate.dock_healthy,
             ready_counter=self._ready_counter,
+            was_ready=self._ready,
             tol=tol,
         )
+        self._ready = ready
 
         st = CoarseApproachStatus()
         st.header.stamp = self.get_clock().now().to_msg()
