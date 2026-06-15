@@ -33,28 +33,11 @@ class GuidanceResult:
     """Body-frame error to the standoff point plus diagnostics for telemetry."""
 
     rel_pos_body: np.ndarray  # [forward, left, up], metres
-    yaw_err: float  # rad; rotate ROV by this to face the boresight
+    yaw_err: float  # rad; rotate ROV by this to face the dock
     range_to_standoff_m: float
     axis_offset_m: float  # perpendicular distance from ROV to the boresight line
     vertical_error_m: float
-
-
-def _heading_error(rel_pos_body, boresight_body, range_to_standoff, blend_range_m):
-    """Yaw error: pursue the standoff point when far (point the nose at it), blend
-    to boresight alignment as it is approached. blend_range_m <= 0 disables the
-    blend (always boresight). w=1 (boresight) at range 0, w=0 (pursuit) at/beyond
-    blend_range_m."""
-    bore = np.array([boresight_body[0], boresight_body[1]])
-    bore_norm = np.linalg.norm(bore)
-    if bore_norm > 1e-9:
-        bore = bore / bore_norm
-    point = np.array([rel_pos_body[0], rel_pos_body[1]])
-    point_norm = np.linalg.norm(point)
-    if blend_range_m > 0.0 and point_norm > 1e-6:
-        w = float(np.clip(1.0 - range_to_standoff / blend_range_m, 0.0, 1.0))
-        blended = w * bore + (1.0 - w) * (point / point_norm)
-        return math.atan2(blended[1], blended[0])
-    return math.atan2(bore[1], bore[0])
+    range_to_dock_m: float  # distance from ROV to the dock (aim point)
 
 
 def compute_guidance(
@@ -64,7 +47,6 @@ def compute_guidance(
     rov_quat_xyzw,
     aim_offset_in_dock,
     standoff_distance_m: float,
-    heading_blend_range_m: float = 0.0,
 ) -> GuidanceResult:
     r_dock = Rotation.from_quat(list(dock_quat_xyzw))
     r_rov = Rotation.from_quat(list(rov_quat_xyzw))
@@ -78,12 +60,14 @@ def compute_guidance(
     rel_pos_body = r_rov.inv().apply(rel_world)  # [forward, left, up]
     range_to_standoff = float(np.linalg.norm(rel_pos_body))
 
-    boresight_world = r_dock.apply(np.array([0.0, 1.0, 0.0]))  # dock +Y
-    boresight_body = r_rov.inv().apply(boresight_world)
-    yaw_err = _heading_error(
-        rel_pos_body, boresight_body, range_to_standoff, heading_blend_range_m
-    )
+    # heading: face the dock (aim point). Well-conditioned everywhere (the dock is
+    # always ~standoff_distance ahead), keeps the dock in the camera FOV, and
+    # equals boresight alignment once on-axis at the standoff.
+    aim_in_body = r_rov.inv().apply(aim - np.asarray(rov_pos, dtype=float))
+    yaw_err = math.atan2(aim_in_body[1], aim_in_body[0])
+    range_to_dock = float(np.linalg.norm(aim_in_body))
 
+    boresight_world = r_dock.apply(np.array([0.0, 1.0, 0.0]))  # dock +Y
     d = np.asarray(rov_pos, dtype=float) - aim
     along = float(np.dot(d, boresight_world))
     perp = d - along * boresight_world
@@ -95,6 +79,7 @@ def compute_guidance(
         range_to_standoff_m=range_to_standoff,
         axis_offset_m=axis_offset,
         vertical_error_m=float(rel_pos_body[2]),
+        range_to_dock_m=range_to_dock,
     )
 
 

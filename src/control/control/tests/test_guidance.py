@@ -101,8 +101,7 @@ def test_standoff_pose_identity_dock_faces_boresight():
     )
 
 
-def test_heading_defaults_to_boresight():
-    # Default (blend range 0) keeps the original boresight-alignment behaviour.
+def test_range_to_dock():
     g = compute_guidance(
         dock_pos=(0.0, 0.0, 0.0),
         dock_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
@@ -111,20 +110,23 @@ def test_heading_defaults_to_boresight():
         aim_offset_in_dock=AIM_OFFSET,
         standoff_distance_m=1.0,
     )
-    assert math.isclose(g.yaw_err, math.pi / 2, abs_tol=1e-6)
+    # aim = (0, 0.310, 0.042); ROV at origin -> distance = hypot(0.310, 0.042)
+    assert math.isclose(g.range_to_dock_m, (0.310**2 + 0.042**2) ** 0.5, abs_tol=1e-6)
 
 
-def test_heading_pursues_point_when_far():
-    # With a small blend range, a far ROV points its nose AT the standoff point
-    # (pursuit) instead of aligning to the boresight. Standoff is at (0,-0.690,*)
-    # in the identity body frame, so pursuit yaw = atan2(-0.690, 0) = -pi/2.
+def test_heading_faces_the_dock():
+    # Heading points the nose at the dock (aim point), not the standoff point.
+    # ROV at the standoff facing the dock -> yaw_err 0; ROV rotated away -> nonzero
+    # toward the dock. Here ROV is left of the dock so it must yaw to face it.
     g = compute_guidance(
         dock_pos=(0.0, 0.0, 0.0),
         dock_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
-        rov_pos=(0.0, 0.0, 0.0),
-        rov_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        rov_pos=(0.5, -0.690, 0.042),  # off to the +x side, near standoff depth
+        rov_quat_xyzw=(0.0, 0.0, math.sin(math.pi / 4), math.cos(math.pi / 4)),
         aim_offset_in_dock=AIM_OFFSET,
         standoff_distance_m=1.0,
-        heading_blend_range_m=0.1,
     )
-    assert math.isclose(g.yaw_err, -math.pi / 2, abs_tol=1e-6)
+    # aim=(0,0.310,0.042); aim-rov=(-0.5,1.0,0); body(+90 about z): fwd=+1.0, left=+0.5
+    # -> yaw_err = atan2(0.5, 1.0) > 0 (turn left to face the dock)
+    assert g.yaw_err > 0.0
+    assert math.isclose(g.yaw_err, math.atan2(0.5, 1.0), abs_tol=1e-6)
