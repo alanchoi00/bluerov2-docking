@@ -11,7 +11,7 @@ coarse_approach:
     kd_yaw: 0.3
     handoff_range_m: 0.0
     surge_taper_range_m: 0.05
-    v_max_surge: 0.3
+    v_max_surge: 0.5
     v_max_sway: 0.3
     v_max_heave: 0.4
     v_max_yaw: 0.5
