@@ -3,7 +3,12 @@
 import numpy as np
 import pytest
 
-from control.pbvs import CmdVel, CoarsePbvsController, CoarsePbvsParams
+from control.pbvs import (
+    CmdVel,
+    CoarsePbvsController,
+    CoarsePbvsParams,
+    approach_speed_limit,
+)
 
 
 def make_params(**overrides) -> CoarsePbvsParams:
@@ -15,8 +20,6 @@ def make_params(**overrides) -> CoarsePbvsParams:
         kd_heave=0.1,
         kp_yaw=0.8,
         kd_yaw=0.1,
-        handoff_range_m=0.5,
-        surge_taper_range_m=1.0,
         # generous limits so the arithmetic tests do not hit saturation
         v_max_surge=1.0,
         v_max_sway=1.0,
@@ -31,8 +34,8 @@ def controller(**overrides) -> CoarsePbvsController:
     return CoarsePbvsController(make_params(**overrides))
 
 
-def test_zero_error_at_handoff_gives_zero_command():
-    cmd = controller().step(np.array([0.5, 0.0, 0.0]), yaw_err=0.0, dt=0.1)
+def test_zero_error_gives_zero_command():
+    cmd = controller().step(np.array([0.0, 0.0, 0.0]), yaw_err=0.0, dt=0.1)
     assert isinstance(cmd, CmdVel)
     assert cmd.surge == pytest.approx(0.0)
     assert cmd.sway == pytest.approx(0.0)
@@ -43,10 +46,11 @@ def test_zero_error_at_handoff_gives_zero_command():
 @pytest.mark.parametrize(
     "range_ahead, v_max_surge, expected",
     [
-        (2.0, 1.0, 0.6),  # full taper: clip(1.5,0,1)=1.0 -> 0.4*(2.0-0.5)=0.6
-        (1.0, 1.0, 0.1),  # in taper band: 0.5 * 0.4 * (1.0-0.5)=0.1 (quadratic)
-        (0.3, 1.0, 0.0),  # inside handoff: taper clips to 0 -> stop, no reverse
-        (10.0, 0.5, 0.5),  # saturates at v_max_surge
+        (2.0, 1.0, 0.8),  # plain P: 0.4 * 2.0
+        (1.0, 1.0, 0.4),  # plain P: 0.4 * 1.0
+        (-0.3, 1.0, -0.12),  # overshot the standoff -> reverse to back out
+        (10.0, 0.5, 0.5),  # saturates at +v_max_surge
+        (-10.0, 0.5, -0.5),  # saturates at -v_max_surge (reverse)
     ],
 )
 def test_surge_first_step(range_ahead, v_max_surge, expected):
@@ -125,3 +129,9 @@ def test_all_commands_within_limits():
         assert abs(cmd.sway) <= limits["v_max_sway"] + 1e-9
         assert abs(cmd.heave) <= limits["v_max_heave"] + 1e-9
         assert abs(cmd.yaw_rate) <= limits["v_max_yaw"] + 1e-9
+
+
+def test_approach_speed_limit_ramp_floor_ceiling():
+    assert approach_speed_limit(2.0, 0.2, 0.05, 0.3) == pytest.approx(0.3)  # ceiling
+    assert approach_speed_limit(1.0, 0.2, 0.05, 0.3) == pytest.approx(0.2)  # linear ramp
+    assert approach_speed_limit(0.1, 0.2, 0.05, 0.3) == pytest.approx(0.05)  # floor

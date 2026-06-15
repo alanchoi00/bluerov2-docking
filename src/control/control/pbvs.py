@@ -20,8 +20,6 @@ class CoarsePbvsParams:
     kp_yaw: float
     kd_yaw: float
 
-    handoff_range_m: float = 0.5  # hand off to fine alignment (#31) at this range
-    surge_taper_range_m: float = 1.0  # window over which surge tapers to 0 at handoff
     v_max_surge: float = 0.5  # m/s
     v_max_sway: float = 0.3  # m/s
     v_max_heave: float = 0.3  # m/s
@@ -50,6 +48,15 @@ def rate(curr: float, prev: float | None) -> float:
     return curr - prev
 
 
+def approach_speed_limit(
+    range_to_dock_m: float, slope_per_s: float, v_floor: float, v_ceiling: float
+) -> float:
+    """Distance-gated surge speed cap: allow slope * range_to_dock, floored at
+    v_floor (final creep) and ceilinged at v_ceiling. Slows the approach the
+    closer the ROV gets to the dock, bounding the worst-case collision speed."""
+    return float(np.clip(slope_per_s * range_to_dock_m, v_floor, v_ceiling))
+
+
 class CoarsePbvsController:
     """Decoupled P/PD regulator: body-frame error to body velocity command."""
 
@@ -68,19 +75,10 @@ class CoarsePbvsController:
 
         range_ahead, lateral_left, vertical_up = rel_pos_body
 
-        # taper to ease surge in, and avoid slamming into the handoff point if the target jumps out there
-        taper_surge = float(
-            np.clip(
-                (range_ahead - self._p.handoff_range_m) / self._p.surge_taper_range_m,
-                0.0,
-                1.0,
-            )
-        )
-
-        surge = clamp(
-            taper_surge * self._p.kp_surge * (range_ahead - self._p.handoff_range_m),
-            self._p.v_max_surge,
-        )
+        # plain P: linear braking ramp over the last v_max/kp metres, and reverse
+        # (negative) if it overshoots the standoff so it backs out instead of
+        # coasting into the dock.
+        surge = clamp(self._p.kp_surge * range_ahead, self._p.v_max_surge)
 
         sway = clamp(
             self._p.kp_sway * lateral_left
