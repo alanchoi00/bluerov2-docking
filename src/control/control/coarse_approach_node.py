@@ -9,6 +9,7 @@ never re-sends a stale command."""
 import rclpy
 from geometry_msgs.msg import Twist, PoseStamped, PoseWithCovarianceStamped
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformListener, TransformException
@@ -20,8 +21,8 @@ from interfaces.msg import FilterHealth, CoarseApproachStatus
 
 
 class CoarseApproach(Node):
-    def __init__(self):
-        super().__init__("coarse_approach")
+    def __init__(self, **kwargs):
+        super().__init__("coarse_approach", **kwargs)
 
         # Fail fast if the pure mirrors drift from the generated message.
         assert hg.WARMING_UP == FilterHealth.WARMING_UP
@@ -32,25 +33,23 @@ class CoarseApproach(Node):
         assert hg.AT_STANDOFF == CoarseApproachStatus.AT_STANDOFF
         assert hg.BLOCKED == CoarseApproachStatus.BLOCKED
 
-        self.declare_parameter("target_frame", "map")
-        self.declare_parameter("aim_offset_in_dock", [0.0, 0.0, 0.0])
-        self.declare_parameter("standoff_distance_m", 1.0)
-        self.declare_parameter("position_tol_m", 0.10)
-        self.declare_parameter("axis_offset_tol_m", 0.10)
-        self.declare_parameter("heading_tol_rad", 0.10)
-        self.declare_parameter("ready_debounce_cycles", 10)
-        self.declare_parameter("degraded_gain_scale", 0.5)
-        self.declare_parameter("control_rate_hz", 20.0)
-        self.declare_parameter("max_pose_age_s", 1.0)
-        for name, default in (
-            ("kp_surge", 1.0), ("kp_sway", 0.8), ("kd_sway", 0.3),
-            ("kp_heave", 0.8), ("kd_heave", 0.3), ("kp_yaw", 1.0), ("kd_yaw", 0.3),
-            ("handoff_range_m", 0.0), ("surge_taper_range_m", 0.05),
-            ("v_max_surge", 0.3), ("v_max_sway", 0.3),
-            ("v_max_heave", 0.3), ("v_max_yaw", 0.5),
-            ("ki_sway", 0.5), ("ki_heave", 0.5), ("i_max", 1.0),
+        # Single source of truth = the launched params file (config/coarse_pbvs.yaml).
+        # Parameters are declared by TYPE only (no in-code defaults), so a value
+        # missing from the YAML fails fast at startup instead of silently drifting.
+        ptype = Parameter.Type
+        self.declare_parameter("target_frame", ptype.STRING)
+        self.declare_parameter("aim_offset_in_dock", ptype.DOUBLE_ARRAY)
+        self.declare_parameter("ready_debounce_cycles", ptype.INTEGER)
+        for name in (
+            "standoff_distance_m", "position_tol_m", "axis_offset_tol_m",
+            "heading_tol_rad", "degraded_gain_scale", "control_rate_hz",
+            "max_pose_age_s",
+            "kp_surge", "kp_sway", "kd_sway", "kp_heave", "kd_heave",
+            "kp_yaw", "kd_yaw", "handoff_range_m", "surge_taper_range_m",
+            "v_max_surge", "v_max_sway", "v_max_heave", "v_max_yaw",
+            "ki_sway", "ki_heave", "i_max",
         ):
-            self.declare_parameter(name, default)
+            self.declare_parameter(name, ptype.DOUBLE)
 
         # Gains are snapshotted here at construction; changing a gain parameter
         # at runtime requires a node restart. Tolerances (see _tolerances) are

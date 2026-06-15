@@ -14,7 +14,7 @@ coarse_approach:
     surge_taper_range_m: 0.05
     v_max_surge: 0.3
     v_max_sway: 0.3
-    v_max_heave: 0.3
+    v_max_heave: 0.4
     v_max_yaw: 0.5
     # Integral action (sway + heave) to cancel steady-state offset against the
     # ArduSub RC deadzone (sway) and net buoyancy (heave). Tune ki up if it
