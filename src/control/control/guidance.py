@@ -39,6 +39,24 @@ class GuidanceResult:
     vertical_error_m: float
 
 
+def _heading_error(rel_pos_body, boresight_body, range_to_standoff, blend_range_m):
+    """Yaw error: pursue the standoff point when far (point the nose at it), blend
+    to boresight alignment as it is approached. blend_range_m <= 0 disables the
+    blend (always boresight). w=1 (boresight) at range 0, w=0 (pursuit) at/beyond
+    blend_range_m."""
+    bore = np.array([boresight_body[0], boresight_body[1]])
+    bore_norm = np.linalg.norm(bore)
+    if bore_norm > 1e-9:
+        bore = bore / bore_norm
+    point = np.array([rel_pos_body[0], rel_pos_body[1]])
+    point_norm = np.linalg.norm(point)
+    if blend_range_m > 0.0 and point_norm > 1e-6:
+        w = float(np.clip(1.0 - range_to_standoff / blend_range_m, 0.0, 1.0))
+        blended = w * bore + (1.0 - w) * (point / point_norm)
+        return math.atan2(blended[1], blended[0])
+    return math.atan2(bore[1], bore[0])
+
+
 def compute_guidance(
     dock_pos,
     dock_quat_xyzw,
@@ -46,6 +64,7 @@ def compute_guidance(
     rov_quat_xyzw,
     aim_offset_in_dock,
     standoff_distance_m: float,
+    heading_blend_range_m: float = 0.0,
 ) -> GuidanceResult:
     r_dock = Rotation.from_quat(list(dock_quat_xyzw))
     r_rov = Rotation.from_quat(list(rov_quat_xyzw))
@@ -57,10 +76,13 @@ def compute_guidance(
 
     rel_world = standoff - np.asarray(rov_pos, dtype=float)
     rel_pos_body = r_rov.inv().apply(rel_world)  # [forward, left, up]
+    range_to_standoff = float(np.linalg.norm(rel_pos_body))
 
     boresight_world = r_dock.apply(np.array([0.0, 1.0, 0.0]))  # dock +Y
     boresight_body = r_rov.inv().apply(boresight_world)
-    yaw_err = math.atan2(boresight_body[1], boresight_body[0])  # (left, forward)
+    yaw_err = _heading_error(
+        rel_pos_body, boresight_body, range_to_standoff, heading_blend_range_m
+    )
 
     d = np.asarray(rov_pos, dtype=float) - aim
     along = float(np.dot(d, boresight_world))
@@ -70,7 +92,7 @@ def compute_guidance(
     return GuidanceResult(
         rel_pos_body=rel_pos_body,
         yaw_err=float(yaw_err),
-        range_to_standoff_m=float(np.linalg.norm(rel_pos_body)),
+        range_to_standoff_m=range_to_standoff,
         axis_offset_m=axis_offset,
         vertical_error_m=float(rel_pos_body[2]),
     )

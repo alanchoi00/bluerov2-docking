@@ -39,13 +39,13 @@ class CoarseApproach(Node):
         self.declare_parameter("aim_offset_in_dock", ptype.DOUBLE_ARRAY)
         self.declare_parameter("ready_debounce_cycles", ptype.INTEGER)
         for name in (
-            "standoff_distance_m", "position_tol_m", "axis_offset_tol_m",
+            "standoff_distance_m", "heading_blend_range_m",
+            "position_tol_m", "axis_offset_tol_m",
             "heading_tol_rad", "degraded_gain_scale", "control_rate_hz",
             "max_pose_age_s",
             "kp_surge", "kp_sway", "kd_sway", "kp_heave", "kd_heave",
             "kp_yaw", "kd_yaw", "handoff_range_m", "surge_taper_range_m",
             "v_max_surge", "v_max_sway", "v_max_heave", "v_max_yaw",
-            "ki_sway", "ki_heave", "i_max",
         ):
             self.declare_parameter(name, ptype.DOUBLE)
 
@@ -96,7 +96,6 @@ class CoarseApproach(Node):
             surge_taper_range_m=g("surge_taper_range_m"),
             v_max_surge=g("v_max_surge"), v_max_sway=g("v_max_sway"),
             v_max_heave=g("v_max_heave"), v_max_yaw=g("v_max_yaw"),
-            ki_sway=g("ki_sway"), ki_heave=g("ki_heave"), i_max=g("i_max"),
         )
 
     def _tolerances(self) -> hg.Tolerances:
@@ -218,6 +217,11 @@ class CoarseApproach(Node):
         standoff = (
             self.get_parameter("standoff_distance_m").get_parameter_value().double_value
         )
+        blend = (
+            self.get_parameter("heading_blend_range_m")
+            .get_parameter_value()
+            .double_value
+        )
 
         g = guidance_lib.compute_guidance(
             dock_pos=(p.position.x, p.position.y, p.position.z),
@@ -236,6 +240,7 @@ class CoarseApproach(Node):
             ),
             aim_offset_in_dock=list(aim_offset),
             standoff_distance_m=standoff,
+            heading_blend_range_m=blend,
         )
 
         cmd = self._controller.step(g.rel_pos_body, g.yaw_err, self._dt)

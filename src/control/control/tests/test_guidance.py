@@ -99,3 +99,32 @@ def test_standoff_pose_identity_dock_faces_boresight():
     assert np.allclose(
         quat, [0.0, 0.0, math.sin(math.pi / 4), math.cos(math.pi / 4)], atol=1e-6
     )
+
+
+def test_heading_defaults_to_boresight():
+    # Default (blend range 0) keeps the original boresight-alignment behaviour.
+    g = compute_guidance(
+        dock_pos=(0.0, 0.0, 0.0),
+        dock_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        rov_pos=(0.0, 0.0, 0.0),
+        rov_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        aim_offset_in_dock=AIM_OFFSET,
+        standoff_distance_m=1.0,
+    )
+    assert math.isclose(g.yaw_err, math.pi / 2, abs_tol=1e-6)
+
+
+def test_heading_pursues_point_when_far():
+    # With a small blend range, a far ROV points its nose AT the standoff point
+    # (pursuit) instead of aligning to the boresight. Standoff is at (0,-0.690,*)
+    # in the identity body frame, so pursuit yaw = atan2(-0.690, 0) = -pi/2.
+    g = compute_guidance(
+        dock_pos=(0.0, 0.0, 0.0),
+        dock_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        rov_pos=(0.0, 0.0, 0.0),
+        rov_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        aim_offset_in_dock=AIM_OFFSET,
+        standoff_distance_m=1.0,
+        heading_blend_range_m=0.1,
+    )
+    assert math.isclose(g.yaw_err, -math.pi / 2, abs_tol=1e-6)

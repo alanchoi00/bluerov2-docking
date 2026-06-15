@@ -27,11 +27,6 @@ class CoarsePbvsParams:
     v_max_heave: float = 0.3  # m/s
     v_max_yaw: float = 0.5  # rad/s
 
-    # integral gains for sway/heave; default 0 keeps pure PD
-    ki_sway: float = 0.0
-    ki_heave: float = 0.0
-    i_max: float = 1.0  # clamp on |integral accumulator| (m*s)
-
 
 @dataclass(frozen=True)
 class CmdVel:
@@ -63,12 +58,10 @@ class CoarsePbvsController:
         self.reset()
 
     def reset(self) -> None:
-        """Clear derivative and integral state before a fresh approach."""
+        """Clear derivative state before a fresh approach."""
         self._prev_lateral: float | None = None
         self._prev_vertical: float | None = None
         self._prev_yaw_err: float | None = None
-        self._int_lateral: float = 0.0
-        self._int_vertical: float = 0.0
 
     def step(self, rel_pos_body: np.ndarray, yaw_err: float, dt: float) -> CmdVel:
         """Compute one velocity command from the current relative dock pose."""
@@ -89,21 +82,14 @@ class CoarsePbvsController:
             self._p.v_max_surge,
         )
 
-        self._int_lateral = clamp(self._int_lateral + lateral_left * dt, self._p.i_max)
-        self._int_vertical = clamp(
-            self._int_vertical + vertical_up * dt, self._p.i_max
-        )
-
         sway = clamp(
             self._p.kp_sway * lateral_left
-            + self._p.ki_sway * self._int_lateral
             + self._p.kd_sway * rate(lateral_left, self._prev_lateral) / dt,
             self._p.v_max_sway,
         )
 
         heave = clamp(
             self._p.kp_heave * vertical_up
-            + self._p.ki_heave * self._int_vertical
             + self._p.kd_heave * rate(vertical_up, self._prev_vertical) / dt,
             self._p.v_max_heave,
         )

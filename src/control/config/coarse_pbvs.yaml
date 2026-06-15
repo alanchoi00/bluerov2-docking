@@ -15,14 +15,12 @@ coarse_approach:
     v_max_sway: 0.3
     v_max_heave: 0.4
     v_max_yaw: 0.5
-    # raise ki if sway/heave converge slowly, lower if they oscillate
-    ki_sway: 0.5
-    ki_heave: 0.5
-    i_max: 1.0
 
     target_frame: "map"
     aim_offset_in_dock: [0.0, 0.0, 0.0]
     standoff_distance_m: 1.0
+    # pursue the standoff point when farther than this; blend to boresight within it
+    heading_blend_range_m: 0.5
 
     position_tol_m: 0.05
     axis_offset_tol_m: 0.01
