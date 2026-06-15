@@ -68,17 +68,20 @@ def decide_phase(
     within_head: bool,
     healthy: bool,
     ready_counter: int,
+    was_ready: bool,
     tol: Tolerances,
 ) -> tuple[int, bool, int]:
     """Return (phase, ready_for_handoff, new_ready_counter).
 
-    Debounce: AT_STANDOFF requires `debounce_cycles` consecutive in-tolerance,
-    healthy cycles to avoid flicker as the ROV crosses the tolerance band."""
+    Hysteresis via an up/down counter: +1 per in-tolerance, healthy cycle and -1
+    otherwise, clamped to [0, debounce_cycles]. Latch AT_STANDOFF once the counter
+    reaches debounce_cycles; stay latched until it decays to 0. This needs a
+    sustained fall out of tolerance to drop ready, so it does not flicker at the
+    tolerance boundary."""
     if blocked:
         return BLOCKED, False, 0
-    if within_pos and within_head and healthy:
-        new_counter = ready_counter + 1
-        if new_counter >= tol.debounce_cycles:
-            return AT_STANDOFF, True, new_counter
-        return APPROACHING, False, new_counter
-    return APPROACHING, False, 0
+    good = within_pos and within_head and healthy
+    counter = ready_counter + 1 if good else ready_counter - 1
+    counter = max(0, min(counter, tol.debounce_cycles))
+    ready = counter > 0 if was_ready else counter >= tol.debounce_cycles
+    return (AT_STANDOFF if ready else APPROACHING), ready, counter
