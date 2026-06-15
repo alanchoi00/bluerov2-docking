@@ -2,7 +2,6 @@ coarse_approach:
   ros__parameters:
     use_sim_time: true
 
-    # --- #29 tuned gains (CoarsePbvsParams field names, verbatim) ---
     kp_surge: 1.0
     kp_sway: 0.8
     kd_sway: 0.3
@@ -16,25 +15,19 @@ coarse_approach:
     v_max_sway: 0.3
     v_max_heave: 0.4
     v_max_yaw: 0.5
-    # Integral action (sway + heave) to cancel steady-state offset against the
-    # ArduSub RC deadzone (sway) and net buoyancy (heave). Tune ki up if it
-    # converges too slowly, down if it overshoots/oscillates near the target.
+    # raise ki if sway/heave converge slowly, lower if they oscillate
     ki_sway: 0.5
     ki_heave: 0.5
     i_max: 1.0
 
-    # --- guidance ---
     target_frame: "map"
-    aim_offset_in_dock: [0.0, 0.0, 0.0]   # target the dock pose directly (base_link aligns to dock frame; no camera-frame offset)
+    aim_offset_in_dock: [0.0, 0.0, 0.0]
     standoff_distance_m: 1.0
 
-    # --- phase tolerances ---
     position_tol_m: 0.05
     axis_offset_tol_m: 0.01
     heading_tol_rad: 0.10
-    ready_debounce_cycles: 10
 
-    # --- health + timing ---
     degraded_gain_scale: 0.5
     control_rate_hz: 20.0
     max_pose_age_s: 1.0

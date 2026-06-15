@@ -1,4 +1,4 @@
-"""Pure coarse-approach guidance: dock pose -> body-frame error to a standoff
+"""Pure coarse-approach guidance: dock pose to a body-frame error at a standoff
 point on the dock entry axis (boresight). No ROS dependencies."""
 
 from __future__ import annotations

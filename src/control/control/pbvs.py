@@ -27,12 +27,10 @@ class CoarsePbvsParams:
     v_max_heave: float = 0.3  # m/s
     v_max_yaw: float = 0.5  # rad/s
 
-    # Integral action on the cross-track (sway) and vertical (heave) axes only.
-    # These cancel the steady-state offset that pure P leaves against the ArduSub
-    # RC deadzone (sway) and net buoyancy (heave). Default 0.0 = pure PD.
+    # integral gains for sway/heave; default 0 keeps pure PD
     ki_sway: float = 0.0
     ki_heave: float = 0.0
-    i_max: float = 1.0  # anti-windup: clamp on |integral accumulator| (m*s)
+    i_max: float = 1.0  # clamp on |integral accumulator| (m*s)
 
 
 @dataclass(frozen=True)
@@ -58,16 +56,14 @@ def rate(curr: float, prev: float | None) -> float:
 
 
 class CoarsePbvsController:
-    """Decoupled P/PD regulator: dock pose in body frame -> body velocity."""
+    """Decoupled P/PD regulator: body-frame error to body velocity command."""
 
     def __init__(self, params: CoarsePbvsParams) -> None:
         self._p = params
         self.reset()
 
     def reset(self) -> None:
-        """Clear derivative-term memory and integral accumulators. Call before
-        each fresh approach so the first step() carries no stale error rate and
-        no wound-up integral from a previous (e.g. blocked) run."""
+        """Clear derivative and integral state before a fresh approach."""
         self._prev_lateral: float | None = None
         self._prev_vertical: float | None = None
         self._prev_yaw_err: float | None = None
@@ -93,7 +89,6 @@ class CoarsePbvsController:
             self._p.v_max_surge,
         )
 
-        # Accumulate integral error with anti-windup clamping on the accumulator.
         self._int_lateral = clamp(self._int_lateral + lateral_left * dt, self._p.i_max)
         self._int_vertical = clamp(
             self._int_vertical + vertical_up * dt, self._p.i_max

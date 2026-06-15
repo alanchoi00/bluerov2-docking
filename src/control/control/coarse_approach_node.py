@@ -33,9 +33,7 @@ class CoarseApproach(Node):
         assert hg.AT_STANDOFF == CoarseApproachStatus.AT_STANDOFF
         assert hg.BLOCKED == CoarseApproachStatus.BLOCKED
 
-        # Single source of truth = the launched params file (config/coarse_pbvs.yaml).
-        # Parameters are declared by TYPE only (no in-code defaults), so a value
-        # missing from the YAML fails fast at startup instead of silently drifting.
+        # all values come from coarse_pbvs.yaml; declared by type, no defaults
         ptype = Parameter.Type
         self.declare_parameter("target_frame", ptype.STRING)
         self.declare_parameter("aim_offset_in_dock", ptype.DOUBLE_ARRAY)
@@ -51,9 +49,7 @@ class CoarseApproach(Node):
         ):
             self.declare_parameter(name, ptype.DOUBLE)
 
-        # Gains are snapshotted here at construction; changing a gain parameter
-        # at runtime requires a node restart. Tolerances (see _tolerances) are
-        # re-read live each tick so they can be tuned in-mission.
+        # gains are read once here; tolerances are read live each tick
         self._controller = CoarsePbvsController(self._params())
         self._ready_counter = 0
         self._latest_pose: PoseWithCovarianceStamped | None = None
@@ -125,8 +121,7 @@ class CoarseApproach(Node):
             return True
         age = self.get_clock().now().nanoseconds * 1e-9 - self._latest_pose_t
         max_age = self.get_parameter("max_pose_age_s").get_parameter_value().double_value
-        # Negative age means the clock jumped backwards (e.g. sim reset): treat
-        # the cached pose as untrustworthy and block until a fresh one arrives.
+        # negative age = clock jumped back (sim reset); treat as stale
         return age < 0.0 or age > max_age
 
     def _publish_zero(self, phase: int) -> None:
@@ -139,15 +134,13 @@ class CoarseApproach(Node):
         self._pub_status.publish(st)
 
     def _block(self) -> None:
-        # reset() clears the PD derivative memory so a resumed approach does not
-        # see a spurious error jump across the blocked gap.
+        # reset clears controller state so a resumed approach has no stale jump
         self._controller.reset()
         self._ready_counter = 0
         self._publish_zero(CoarseApproachStatus.BLOCKED)
 
     def _publish_standoff(self) -> None:
-        # Visualization only: the target standoff pose (position + desired
-        # boresight heading) in the target frame, regardless of gating.
+        # visualization only: the target standoff pose in the target frame
         p = self._latest_pose.pose.pose
         aim_offset = (
             self.get_parameter("aim_offset_in_dock")
@@ -205,8 +198,7 @@ class CoarseApproach(Node):
             self.get_parameter("target_frame").get_parameter_value().string_value
         )
         try:
-            # Time() = latest available transform; ROV TF staleness is
-            # acceptable for coarse approach (avoids a measurement-stamp deadlock).
+            # Time() = latest transform; staleness is fine for coarse approach
             tf = self._tf_buffer.lookup_transform(target_frame, "base_link", Time())
         except TransformException as exc:
             self.get_logger().warn(

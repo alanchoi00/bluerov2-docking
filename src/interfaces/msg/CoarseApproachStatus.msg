@@ -1,8 +1,7 @@
-# Coarse approach phase + per-axis errors to the standoff point.
-# Telemetry consumed by the docking state machine (#32) and Foxglove plots.
+# Coarse approach phase and error telemetry, consumed by the state machine (#32).
 uint8 APPROACHING = 0
 uint8 AT_STANDOFF = 1
-uint8 BLOCKED = 2  # dock pose untrustworthy (stale / warming-up / no TF) -> holding
+uint8 BLOCKED = 2  # dock pose not trusted (stale or no TF); holding
 
 std_msgs/Header header
 
