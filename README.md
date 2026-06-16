@@ -6,12 +6,11 @@ ROS2 simulation and perception stack for autonomous BlueROV2 underwater docking 
 
 ## Overview
 
-The system uses a two-level visual guidance pipeline:
+The system drives the BlueROV2 onto a dock through a perception-to-control pipeline:
 
-| Level | Guidance | Range | Method |
-|-------|----------|-------|--------|
-| I | Coarse approach | Long range | LED cluster detection -> centroid-based IBVS |
-| II | Fine alignment | Close range | ArUco PnP -> 6-DOF pose error |
+1. **Perception** fuses multiple ArUco markers into a single 6-DOF dock pose and smooths it with a Kalman filter, publishing the filtered pose plus a health signal. A simulated LED point cloud provides a complementary long-range cue.
+2. **Coarse approach** (PBVS) servos on the filtered dock pose to drive the vehicle to a standoff point on the dock's entry axis, ready for handoff.
+3. **Fine alignment** (impedance control, planned) takes over at close range for final docking.
 
 ### Packages
 
@@ -19,7 +18,9 @@ The system uses a two-level visual guidance pipeline:
 |---------|-------------|
 | `description` | Docking station Gazebo model, world file, RViz + Foxglove configs |
 | `sim` | Simulation launch file |
-| `perception` | LED mock publisher, ArUco detection relay |
+| `perception` | ArUco detection, multi-marker fusion + Kalman filter, LED mock publisher |
+| `control` | Coarse approach PBVS controller |
+| `interfaces` | Custom messages (filter health, coarse approach status) |
 
 ## Prerequisites
 
@@ -108,12 +109,15 @@ ros2 launch sim sim.launch.py
 | `use_aruco` | `true` | Run ArUco marker detection |
 | `use_docking_rviz` | `false` | Open RViz with docking config |
 | `use_foxglove` | `false` | Start `foxglove_bridge` (WebSocket on port 8765) |
+| `use_control` | `false` | Start the coarse approach PBVS controller (`control` package) |
 
 E.g., launch without ArduSub for faster startup:
 
 ```bash
 ros2 launch sim sim.launch.py use_ardusub:=false use_docking_rviz:=true
 ```
+
+> The coarse controller (`use_control:=true`) assumes the vehicle owns horizontal control, i.e. `ALT_HOLD`. The default `POSHOLD` holds position and fights its sway/surge commands, so run it with `flight_mode:=ALT_HOLD`.
 
 ### Foxglove
 
