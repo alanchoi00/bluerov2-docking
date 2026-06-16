@@ -6,12 +6,29 @@ find_package(ament_cmake_python REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
 
-# Node executables land here in #30; for now this package ships the pure-Python
-# control law (control/pbvs.py) consumed by the #29 prototype and the #30 node.
+install(PROGRAMS
+  control/coarse_approach_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME coarse_approach_node
+)
+
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+)
+
+install(DIRECTORY config/
+  DESTINATION share/${PROJECT_NAME}/config
+)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   ament_add_pytest_test(test_pbvs control/tests/test_pbvs.py)
+  ament_add_pytest_test(test_guidance control/tests/test_guidance.py)
+  ament_add_pytest_test(test_health_gate control/tests/test_health_gate.py)
+  ament_add_pytest_test(test_coarse_approach_node
+    control/integration/test_coarse_approach_node.py
+    TIMEOUT 60
+  )
 endif()
 
 ament_package()

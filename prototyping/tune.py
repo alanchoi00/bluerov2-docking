@@ -3,9 +3,6 @@
 Workflow: edit the gains (in results/coarse_pbvs_gains.yaml, or the STARTING_GAINS
 seed below if no YAML yet) -> run this -> read the metrics table + results/*.png ->
 repeat -> commit the YAML + plots. The YAML keys match CoarsePbvsParams exactly,
-so #30 loads it directly as ROS parameters.
-
-    python3 prototyping/tune.py
 """
 
 import _paths  # noqa: F401

@@ -1,40 +1,15 @@
 {
   "configById": {
     "3D!vb5f7v": {
-      "topics": {
-        "/perception/leds": {
-          "visible": true,
-          "colorField": "z",
-          "colorMode": "colormap",
-          "colorMap": "turbo"
-        },
-        "/perception/dock_visualization": {
-          "visible": true,
-          "showOutlines": false,
-          "color": "#2000eeff"
-        },
-        "/robot_description": {
-          "visible": true,
-          "displayMode": "auto",
-          "showOutlines": false,
-          "showAxis": false
-        }
-      },
-      "layers": {
-        "9ace85fd-daa0-485f-b1cc-66dd66fff6a0": {
-          "layerId": "foxglove.Grid",
-          "instanceId": "9ace85fd-daa0-485f-b1cc-66dd66fff6a0"
-        }
-      },
       "cameraState": {
         "perspective": true,
-        "distance": 2.5702431313004683,
-        "phi": 71.30493404165628,
-        "thetaOffset": 90.4154672427622,
+        "distance": 4,
+        "phi": 60.00000000000001,
+        "thetaOffset": 90,
         "targetOffset": [
-          0.8464620497430096,
-          -0.03863399792824959,
-          3.4732601415676166e-17
+          0,
+          0,
+          1.2613220715724313e-17
         ],
         "target": [
           0,
@@ -49,54 +24,16 @@
         ],
         "fovy": 45,
         "near": 0.5,
-        "far": 5000
+        "far": 5000,
+        "logDepth": false
       },
       "followMode": "follow-pose",
-      "scene": {
-        "enableStats": false,
-        "ignoreColladaUpAxis": false,
-        "syncCamera": true,
-        "backgroundColor": "#100d28",
-        "labelScaleFactor": 0
-      },
+      "scene": {},
       "transforms": {
         "frame:": {
           "visible": false
         },
         "frame:base_footprint": {
-          "visible": false
-        },
-        "frame:odom": {
-          "visible": false
-        },
-        "frame:odom_ned": {
-          "visible": false
-        },
-        "frame:thruster1": {
-          "visible": false
-        },
-        "frame:thruster2": {
-          "visible": false
-        },
-        "frame:thruster3": {
-          "visible": false
-        },
-        "frame:thruster4": {
-          "visible": false
-        },
-        "frame:thruster5": {
-          "visible": false
-        },
-        "frame:thruster6": {
-          "visible": false
-        },
-        "frame:thruster7": {
-          "visible": false
-        },
-        "frame:thruster8": {
-          "visible": false
-        },
-        "frame:map_ned": {
           "visible": false
         },
         "frame:map": {
@@ -105,10 +42,13 @@
         "frame:base_link": {
           "visible": false
         },
-        "frame:base_link_frd": {
+        "frame:thruster4": {
           "visible": false
         },
-        "frame:base_link_fsd": {
+        "frame:thruster7": {
+          "visible": false
+        },
+        "frame:thruster6": {
           "visible": false
         },
         "frame:camera_mount_link": {
@@ -116,6 +56,72 @@
         },
         "frame:camera_link": {
           "visible": false
+        },
+        "frame:thruster3": {
+          "visible": false
+        },
+        "frame:thruster8": {
+          "visible": false
+        },
+        "frame:base_link_fsd": {
+          "visible": false
+        },
+        "frame:odom": {
+          "visible": false
+        },
+        "frame:odom_ned": {
+          "visible": false
+        },
+        "frame:base_link_frd": {
+          "visible": false
+        },
+        "frame:map_ned": {
+          "visible": false
+        },
+        "frame:thruster2": {
+          "visible": false
+        },
+        "frame:thruster5": {
+          "visible": false
+        },
+        "frame:thruster1": {
+          "visible": false
+        },
+        "frame:dock_filtered": {
+          "visible": true
+        }
+      },
+      "topics": {
+        "/perception/dock_visualization": {
+          "visible": true,
+          "color": "#ffffffff",
+          "showOutlines": false
+        },
+        "/robot_description": {
+          "visible": true,
+          "showOutlines": false
+        }
+      },
+      "layers": {
+        "grid": {
+          "visible": true,
+          "drawBehind": false,
+          "instanceId": "c2347574-0ddc-45b8-aec8-c5d6a9ca24f2",
+          "layerId": "foxglove.Grid",
+          "size": 10,
+          "divisions": 10,
+          "lineWidth": 1,
+          "color": "#248eff",
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
         }
       },
       "publish": {
@@ -129,13 +135,10 @@
       },
       "synchronize": false,
       "imageMode": {},
-      "followTf": "base_link"
+      "foxglovePanelTitle": "Visualization"
     },
     "TransformTree!20rx75x": {},
     "Image!30kciis": {
-      "imageMode": {
-        "imageTopic": "/arucos/result/compressed"
-      },
       "cameraState": {
         "distance": 20,
         "perspective": true,
@@ -175,55 +178,10 @@
         "poseEstimateYDeviation": 0.5,
         "poseEstimateThetaDeviation": 0.26179939
       },
-      "synchronize": false
-    },
-    "Plot!5q4au1": {
-      "paths": [
-        {
-          "value": "/cmd_vel.angular.x",
-          "enabled": true,
-          "color": "#5cd6a9",
-          "id": "d32bd5b3-448b-46e1-a51f-c33d5968ad31"
-        },
-        {
-          "value": "/cmd_vel.angular.y",
-          "enabled": true,
-          "color": "#61cbff",
-          "id": "777c48fd-756f-4385-858a-1a3094a3a1e7"
-        },
-        {
-          "value": "/cmd_vel.angular.z",
-          "enabled": true,
-          "color": "#a395e2",
-          "id": "9955a977-4fcf-4947-ad89-c78a578f4e41"
-        }
-      ],
-      "showLegend": false,
-      "foxglovePanelTitle": "/cmd_vel"
-    },
-    "Plot!tnf67a": {
-      "paths": [
-        {
-          "value": "/mavros/global_position/compass_hdg.data",
-          "enabled": true,
-          "color": "#cad660",
-          "id": "47624d28-08eb-4625-abe0-12dbb73a2e82"
-        }
-      ],
-      "showLegend": false,
-      "foxglovePanelTitle": "/mavros/global_position/compass_hdg"
-    },
-    "Plot!38ckkkz": {
-      "paths": [
-        {
-          "value": "/mavros/global_position/rel_alt.data",
-          "enabled": true,
-          "color": "#4e98e2",
-          "id": "7f617264-f545-41cf-94b3-05f64a8d38a5"
-        }
-      ],
-      "showLegend": false,
-      "foxglovePanelTitle": "/mavros/global_position/rel_alt"
+      "synchronize": false,
+      "imageMode": {
+        "imageTopic": "/arucos/result"
+      }
     },
     "DiagnosticSummary!4ghga9i": {
       "topicToRender": "/diagnostics",
@@ -234,7 +192,7 @@
       "secondsUntilStale": 5
     },
     "RawMessages!3b4374b": {
-      "topicPath": "/perception/dock_pose_filtered",
+      "topicPath": "/control/coarse_approach/status",
       "defaultExpanded": false
     },
     "Tab!2dqadhn": {
@@ -259,36 +217,96 @@
             "direction": "column",
             "first": "Image!30kciis",
             "second": {
-              "direction": "column",
-              "first": {
-                "direction": "column",
-                "first": "Plot!5q4au1",
-                "second": {
-                  "direction": "column",
-                  "first": "Plot!tnf67a",
-                  "second": "Plot!38ckkkz",
-                  "splitPercentage": 50
-                },
-                "splitPercentage": 33.333333333333336
-              },
-              "second": {
-                "direction": "row",
-                "first": "DiagnosticSummary!4ghga9i",
-                "second": "RawMessages!3b4374b",
-                "splitPercentage": 50
-              },
-              "splitPercentage": 56.57077798861481
+              "direction": "row",
+              "first": "DiagnosticSummary!4ghga9i",
+              "second": "RawMessages!3b4374b",
+              "splitPercentage": 50
             },
-            "splitPercentage": 34.24667931688805
+            "splitPercentage": 63.90958129976882
           }
+        }
+      ]
+    },
+    "Plot!5q4au1": {
+      "paths": [
+        {
+          "value": "/cmd_vel.angular.x",
+          "enabled": true,
+          "color": "#5cd6a9",
+          "id": "d32bd5b3-448b-46e1-a51f-c33d5968ad31"
+        },
+        {
+          "value": "/cmd_vel.angular.y",
+          "enabled": true,
+          "color": "#61cbff",
+          "id": "777c48fd-756f-4385-858a-1a3094a3a1e7"
+        },
+        {
+          "value": "/cmd_vel.angular.z",
+          "enabled": true,
+          "color": "#a395e2",
+          "id": "9955a977-4fcf-4947-ad89-c78a578f4e41"
+        }
+      ],
+      "showLegend": true,
+      "foxglovePanelTitle": "/cmd_vel.angular"
+    },
+    "Plot!3hyzt2l": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/cmd_vel.linear.x",
+          "enabled": true,
+          "color": "#4e98e2",
+          "id": "b8493427-a45d-4ef3-ae36-730c781fecbb"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/cmd_vel.linear.y",
+          "enabled": true,
+          "color": "#f5774d",
+          "id": "7a22ee1f-140b-43f6-a2b0-7728e93a2b32"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/cmd_vel.linear.z",
+          "enabled": true,
+          "color": "#f7df71",
+          "id": "c195432f-97a9-4da0-9551-a4edae006010"
+        }
+      ],
+      "foxglovePanelTitle": "/cmd_vel.linear"
+    },
+    "Plot!4apt6l": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/control/coarse_approach/status.axis_offset_m",
+          "enabled": true,
+          "color": "#4e98e2",
+          "id": "626bf12e-0d0a-4157-ba98-5982c5650786"
         }
       ]
     }
   },
   "layout": {
-    "first": "Tab!2dqadhn",
-    "second": "Tab!3ofs9ss",
-    "direction": "row"
+    "first": {
+      "first": {
+        "first": "Tab!2dqadhn",
+        "second": "Tab!3ofs9ss",
+        "direction": "row"
+      },
+      "second": {
+        "first": "Plot!5q4au1",
+        "second": "Plot!3hyzt2l",
+        "direction": "row"
+      },
+      "direction": "column",
+      "splitPercentage": 77.80300256316369
+    },
+    "second": "Plot!4apt6l",
+    "direction": "column",
+    "splitPercentage": 77.80300256316369
   },
   "globalVariables": {},
   "playbackConfig": {

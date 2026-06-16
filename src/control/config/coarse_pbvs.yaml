@@ -1,0 +1,34 @@
+coarse_approach:
+  ros__parameters:
+    use_sim_time: true
+
+    kp_surge: 1.0
+    kp_sway: 0.8
+    kd_sway: 0.0
+    kp_heave: 2.0
+    kd_heave: 0.0
+    kp_yaw: 1.0
+    kd_yaw: 0.0
+    v_max_surge: 0.3
+    v_max_sway: 0.3
+    v_max_heave: 0.4
+    v_max_yaw: 0.5
+    # approach-speed envelope: surge capped at slope * (distance to dock), floored
+    # for the final creep and ceilinged at v_max_surge. Slows progressively near
+    # the dock and bounds collision speed.
+    approach_speed_slope: 0.2
+    approach_speed_floor: 0.05
+
+    target_frame: "map"
+    aim_offset_in_dock: [0.0, 0.0, 0.0]
+    standoff_distance_m: 1.0
+
+    # handoff window = coarse's real pure-P accuracy (~5 cm)
+    position_tol_m: 0.10
+    axis_offset_tol_m: 0.08
+    heading_tol_rad: 0.10
+    ready_debounce_cycles: 10
+
+    degraded_gain_scale: 0.5
+    control_rate_hz: 20.0
+    max_pose_age_s: 1.0
