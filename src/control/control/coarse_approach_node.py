@@ -99,6 +99,14 @@ class CoarseApproach(Node):
         self._dt = 1.0 / rate
         self.create_timer(self._dt, self._tick)
         self.get_logger().info("coarse_approach ready")
+        # Precondition, not enforced here: flight-mode ownership belongs to the
+        # docking state machine. This node assumes the vehicle owns
+        # horizontal control (ALT_HOLD). In POSHOLD, ArduSub holds position and
+        # fights the sway/surge commands, so horizontal control is undefined.
+        self.get_logger().warn(
+            "coarse_approach assumes ALT_HOLD; horizontal control is undefined "
+            "in POSHOLD (ArduSub position-hold fights cmd_vel)"
+        )
 
     def _params(self) -> CoarsePbvsParams:
         g = lambda n: self.get_parameter(n).get_parameter_value().double_value
