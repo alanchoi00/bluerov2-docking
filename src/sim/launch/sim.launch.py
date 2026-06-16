@@ -93,8 +93,6 @@ def generate_launch_description():
                     {
                         "use_sim_time": True,
                         "port": 8765,
-                        # Serve package:// and file:// mesh assets so the dock DAE
-                        # marker and the robot URDF meshes load in the 3D panel.
                         "asset_uri_allowlist": ["^package://.*", "^file://.*"],
                     }
                 ],
@@ -104,7 +102,10 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("control"), "launch/coarse_approach.launch.py"]
+                        [
+                            FindPackageShare("control"),
+                            "launch/coarse_approach.launch.py",
+                        ]
                     )
                 ),
                 launch_arguments={"target_frame": "map"}.items(),

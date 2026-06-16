@@ -98,4 +98,4 @@ def standoff_pose_in_target(
         dock_pos, dock_quat_xyzw, aim_offset_in_dock, standoff_distance_m
     )
     desired = r_dock * Rotation.from_euler("z", math.pi / 2)
-    return pos, tuple(float(q) for q in desired.as_quat())
+    return pos, tuple(float(q) for q in desired.as_quat(True))

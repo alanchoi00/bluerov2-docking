@@ -9,8 +9,7 @@ import numpy as np
 
 @dataclass(frozen=True)
 class CoarsePbvsParams:
-    """Tunable gains + fixed limits. Field names are reused verbatim as ROS
-    parameter names by the #30 node, so the tuned YAML loads directly there."""
+    """Tunable gains + fixed limits."""
 
     kp_surge: float
     kp_sway: float
@@ -20,15 +19,15 @@ class CoarsePbvsParams:
     kp_yaw: float
     kd_yaw: float
 
-    v_max_surge: float = 0.5  # m/s
-    v_max_sway: float = 0.3  # m/s
-    v_max_heave: float = 0.3  # m/s
-    v_max_yaw: float = 0.5  # rad/s
+    v_max_surge: float  # m/s
+    v_max_sway: float  # m/s
+    v_max_heave: float  # m/s
+    v_max_yaw: float  # rad/s
 
 
 @dataclass(frozen=True)
 class CmdVel:
-    """Body-frame velocity command (maps 1:1 to geometry_msgs/Twist in #30)."""
+    """Body-frame velocity command."""
 
     surge: float
     sway: float
@@ -75,9 +74,6 @@ class CoarsePbvsController:
 
         range_ahead, lateral_left, vertical_up = rel_pos_body
 
-        # plain P: linear braking ramp over the last v_max/kp metres, and reverse
-        # (negative) if it overshoots the standoff so it backs out instead of
-        # coasting into the dock.
         surge = clamp(self._p.kp_surge * range_ahead, self._p.v_max_surge)
 
         sway = clamp(

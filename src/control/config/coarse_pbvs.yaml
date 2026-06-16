@@ -23,7 +23,7 @@ coarse_approach:
     aim_offset_in_dock: [0.0, 0.0, 0.0]
     standoff_distance_m: 1.0
 
-    # handoff window = coarse's real pure-P accuracy (~5 cm); #31 owns final precision
+    # handoff window = coarse's real pure-P accuracy (~5 cm)
     position_tol_m: 0.10
     axis_offset_tol_m: 0.08
     heading_tol_rad: 0.10

@@ -1,4 +1,4 @@
-# Coarse approach phase and error telemetry, consumed by the state machine (#32).
+# Coarse approach phase and error telemetry, consumed by the state machine.
 uint8 APPROACHING = 0
 uint8 AT_STANDOFF = 1
 uint8 BLOCKED = 2  # dock pose not trusted (stale or no TF); holding

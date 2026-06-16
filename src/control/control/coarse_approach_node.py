@@ -2,7 +2,7 @@
 """coarse_approach: PBVS coarse-approach controller node.
 
 Drives the BlueROV2 to a standoff point on the dock entry axis using the
-filtered dock pose (#34). Publishes body-frame cmd_vel + CoarseApproachStatus.
+filtered dock pose. Publishes body-frame cmd_vel + CoarseApproachStatus.
 Fixed-rate timer always emits a command (zero when BLOCKED) so ardusub_bridge
 never re-sends a stale command."""
 
@@ -40,13 +40,25 @@ class CoarseApproach(Node):
         self.declare_parameter("ready_debounce_cycles", ptype.INTEGER)
         for name in (
             "standoff_distance_m",
-            "position_tol_m", "axis_offset_tol_m",
-            "heading_tol_rad", "degraded_gain_scale", "control_rate_hz",
+            "position_tol_m",
+            "axis_offset_tol_m",
+            "heading_tol_rad",
+            "degraded_gain_scale",
+            "control_rate_hz",
             "max_pose_age_s",
-            "kp_surge", "kp_sway", "kd_sway", "kp_heave", "kd_heave",
-            "kp_yaw", "kd_yaw",
-            "v_max_surge", "v_max_sway", "v_max_heave", "v_max_yaw",
-            "approach_speed_slope", "approach_speed_floor",
+            "kp_surge",
+            "kp_sway",
+            "kd_sway",
+            "kp_heave",
+            "kd_heave",
+            "kp_yaw",
+            "kd_yaw",
+            "v_max_surge",
+            "v_max_sway",
+            "v_max_heave",
+            "v_max_yaw",
+            "approach_speed_slope",
+            "approach_speed_floor",
         ):
             self.declare_parameter(name, ptype.DOUBLE)
 
@@ -91,11 +103,17 @@ class CoarseApproach(Node):
     def _params(self) -> CoarsePbvsParams:
         g = lambda n: self.get_parameter(n).get_parameter_value().double_value
         return CoarsePbvsParams(
-            kp_surge=g("kp_surge"), kp_sway=g("kp_sway"), kd_sway=g("kd_sway"),
-            kp_heave=g("kp_heave"), kd_heave=g("kd_heave"),
-            kp_yaw=g("kp_yaw"), kd_yaw=g("kd_yaw"),
-            v_max_surge=g("v_max_surge"), v_max_sway=g("v_max_sway"),
-            v_max_heave=g("v_max_heave"), v_max_yaw=g("v_max_yaw"),
+            kp_surge=g("kp_surge"),
+            kp_sway=g("kp_sway"),
+            kd_sway=g("kd_sway"),
+            kp_heave=g("kp_heave"),
+            kd_heave=g("kd_heave"),
+            kp_yaw=g("kp_yaw"),
+            kd_yaw=g("kd_yaw"),
+            v_max_surge=g("v_max_surge"),
+            v_max_sway=g("v_max_sway"),
+            v_max_heave=g("v_max_heave"),
+            v_max_yaw=g("v_max_yaw"),
         )
 
     def _tolerances(self) -> hg.Tolerances:
@@ -119,7 +137,9 @@ class CoarseApproach(Node):
         if self._latest_pose_t is None:
             return True
         age = self.get_clock().now().nanoseconds * 1e-9 - self._latest_pose_t
-        max_age = self.get_parameter("max_pose_age_s").get_parameter_value().double_value
+        max_age = (
+            self.get_parameter("max_pose_age_s").get_parameter_value().double_value
+        )
         # negative age = clock jumped back (sim reset); treat as stale
         return age < 0.0 or age > max_age
 
@@ -185,9 +205,7 @@ class CoarseApproach(Node):
             return
 
         scale = (
-            self.get_parameter("degraded_gain_scale")
-            .get_parameter_value()
-            .double_value
+            self.get_parameter("degraded_gain_scale").get_parameter_value().double_value
         )
         gate = hg.gate_for_health(self._latest_health, scale)
         if gate.blocked:
