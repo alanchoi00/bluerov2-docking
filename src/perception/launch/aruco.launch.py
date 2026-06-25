@@ -105,6 +105,7 @@ def generate_launch_description():
                                 "use_sim_time": use_sim_time,
                                 "predict_rate_hz": 30.0,
                                 "process_noise_regime": "static",
+                                "min_markers_for_init": 2,
                                 "healthy_max_age_s": HEALTHY_MAX_AGE_S,
                                 "healthy_max_position_std_m": HEALTHY_MAX_POSITION_STD_M,
                                 "stale_max_age_s": STALE_MAX_AGE_S,

@@ -18,7 +18,7 @@ from geometry_msgs.msg import (
 )
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
-from interfaces.msg import FilterHealth
+from interfaces.msg import DockPoseMeasurement, FilterHealth
 
 _BEST_EFFORT_QOS = QoSProfile(
     reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -39,7 +39,7 @@ def _make_harness(FilterHealth):
         def __init__(self):
             super().__init__("filter_test_harness")
             self._fused_pub = self.create_publisher(
-                PoseWithCovarianceStamped, "/perception/aruco_dock_pose",
+                DockPoseMeasurement, "/perception/dock_pose_measured",
                 _BEST_EFFORT_QOS,
             )
             self._filtered_received: list[PoseWithCovarianceStamped] = []
@@ -64,8 +64,11 @@ def _make_harness(FilterHealth):
             tf.transform.rotation.w = 1.0
             self._tf.sendTransform(tf)
 
-        def publish_fused(self, x: float, y: float, z: float, sigma: float = 0.01):
-            msg = PoseWithCovarianceStamped()
+        def publish_fused(
+            self, x: float, y: float, z: float, sigma: float = 0.01,
+            num_markers: int = 3,
+        ):
+            msg = DockPoseMeasurement()
             msg.header.stamp = self.get_clock().now().to_msg()
             msg.header.frame_id = "camera_link"
             msg.pose.pose.position.x = x
@@ -76,6 +79,7 @@ def _make_harness(FilterHealth):
             for i in (0, 7, 14, 21, 28, 35):  # diagonal
                 cov[i] = sigma ** 2
             msg.pose.covariance = cov
+            msg.num_markers = num_markers
             self._fused_pub.publish(msg)
 
     return _Harness()
@@ -121,6 +125,53 @@ def test_initializes_on_first_fused_pose(ros_context):
     assert abs(last.pose.pose.position.z - 3.0) < 0.1
 
     assert any(h.status == FilterHealth.HEALTHY for h in harness._health_received)
+
+    node_under_test.destroy_node()
+    harness.destroy_node()
+
+
+def test_single_marker_measurement_does_not_initialize(ros_context):
+    """Regression: a 1-marker fused pose is under-determined (planar flip
+    ambiguity) and must NOT initialize the filter. With min_markers_for_init=2,
+    feeding only single-marker measurements keeps the filter WARMING_UP and
+    publishes no filtered pose. This is the root-cause fix for the tilted /
+    high-covariance dock seen at startup under software rendering.
+    """
+    from perception.aruco.dock_pose_filter import DockPoseFilter
+    node_under_test = DockPoseFilter()
+    node_under_test.set_parameters([
+        rclpy.parameter.Parameter(
+            "min_markers_for_init",
+            rclpy.parameter.Parameter.Type.INTEGER,
+            2,
+        )
+    ])
+    harness = _make_harness(FilterHealth)
+
+    exec_ = SingleThreadedExecutor()
+    exec_.add_node(node_under_test)
+    exec_.add_node(harness)
+
+    stop = threading.Event()
+    t = threading.Thread(
+        target=lambda: [exec_.spin_once(timeout_sec=0.05) for _ in iter(lambda: not stop.is_set(), False)],
+        daemon=True,
+    )
+    t.start()
+
+    time.sleep(0.3)  # let TF propagate
+    for _ in range(5):
+        harness.publish_fused(1.0, 2.0, 3.0, num_markers=1)
+        time.sleep(0.1)
+    time.sleep(0.3)
+
+    stop.set()
+    t.join(timeout=1.0)
+
+    assert len(harness._filtered_received) == 0
+    assert harness._health_received  # health is still being published
+    for h in harness._health_received:
+        assert h.status == FilterHealth.WARMING_UP
 
     node_under_test.destroy_node()
     harness.destroy_node()
