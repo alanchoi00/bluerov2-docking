@@ -10,6 +10,8 @@ from message_filters import ApproximateTimeSynchronizer, Subscriber
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation
 
+from interfaces.msg import DockPoseMeasurement
+
 from perception.aruco.lib.dock_layout import (
     EXPECTED_MARKER_IDS,
     MARKER_POSE_IN_DOCK,
@@ -70,8 +72,16 @@ class ArucoFusion(Node):
         self.declare_parameter("noise_scale_alpha_rot", 0.001)
         self.declare_parameter("min_markers_for_consensus", 3)
 
+        # Legacy viz topic: plain PoseWithCovarianceStamped so RViz/Foxglove
+        # can render the raw measurement covariance ellipsoid unchanged.
         self._pub = self.create_publisher(
             PoseWithCovarianceStamped, "/perception/aruco_dock_pose", 10
+        )
+        # Machine-readable measurement consumed by dock_pose_filter. Same pose +
+        # covariance, plus the marker count the fix is built on (num_markers),
+        # so the filter can refuse to initialize on an under-determined frame.
+        self._pub_measurement = self.create_publisher(
+            DockPoseMeasurement, "/perception/dock_pose_measured", 10
         )
 
         self._subs = [
@@ -168,6 +178,13 @@ class ArucoFusion(Node):
         out.pose.covariance = cov6.flatten().tolist()
 
         self._pub.publish(out)
+
+        measurement = DockPoseMeasurement()
+        measurement.header = out.header
+        measurement.pose = out.pose
+        measurement.num_markers = len(measurements)
+        measurement.marker_ids = [int(m.marker_id) for m in measurements]
+        self._pub_measurement.publish(measurement)
 
 
 def main(args=None):
