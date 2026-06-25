@@ -1,12 +1,4 @@
-"""Tests for the filter initialization-eligibility gate.
-
-Root cause these guard against (see investigation 2026-06-25): under software
-rendering the very first fused dock pose at startup is often a SINGLE-marker
-estimate, which suffers the planar PnP flip/tilt ambiguity. The KF used to
-initialize on it unconditionally, anchoring a tilted pose with 100x-inflated
-covariance that took seconds to correct. The gate refuses to initialize until
-the fused measurement is backed by enough markers to constrain orientation.
-"""
+"""Tests for the filter initialization-eligibility gate."""
 
 from perception.aruco.lib.init_policy import is_initialization_eligible
 
