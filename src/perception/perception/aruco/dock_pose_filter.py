@@ -27,7 +27,9 @@ from perception.aruco.lib.health import (
     HealthThresholds,
     classify_health,
 )
+from perception.aruco.lib.init_policy import is_initialization_eligible
 from perception.aruco.lib.kalman import DockPoseKalmanFilter, make_process_noise
+from interfaces.msg import DockPoseMeasurement
 from interfaces.msg import FilterHealth as FilterHealthMsg
 
 
@@ -48,6 +50,12 @@ class DockPoseFilter(Node):
         self.declare_parameter("process_noise_regime", "static")
         self.declare_parameter("mahalanobis_gate_chi2", 18.548)
         self.declare_parameter("initial_covariance_inflation", 100.0)
+        # Minimum markers backing a fused measurement before the filter is
+        # allowed to initialize on it. A single marker suffers the planar PnP
+        # flip/tilt ambiguity; >=2 non-collinear markers break it. See
+        # lib/init_policy.py for the rationale. (Default is a placeholder -
+        # tune to the dock's geometry / approach range.)
+        self.declare_parameter("min_markers_for_init", 2)
         self.declare_parameter("tf_connectivity_grace_period_s", 5.0)
         self.declare_parameter("target_frame", "odom")
         self.declare_parameter("child_frame", "dock_filtered")
@@ -87,8 +95,8 @@ class DockPoseFilter(Node):
         )
 
         self.create_subscription(
-            PoseWithCovarianceStamped,
-            "/perception/aruco_dock_pose",
+            DockPoseMeasurement,
+            "/perception/dock_pose_measured",
             self._on_fused,
             sub_qos,
         )
@@ -112,7 +120,7 @@ class DockPoseFilter(Node):
             .double_value,
         )
 
-    def _on_fused(self, msg: PoseWithCovarianceStamped) -> None:
+    def _on_fused(self, msg: DockPoseMeasurement) -> None:
         grace = (
             self.get_parameter("tf_connectivity_grace_period_s")
             .get_parameter_value()
@@ -168,6 +176,18 @@ class DockPoseFilter(Node):
         meas_cov_rot = cov[3:, 3:]
 
         if not self._kf.is_initialized:
+            min_markers = (
+                self.get_parameter("min_markers_for_init")
+                .get_parameter_value()
+                .integer_value
+            )
+            if not is_initialization_eligible(msg.num_markers, min_markers):
+                self.get_logger().info(
+                    f"Deferring init: measurement has {msg.num_markers} marker(s), "
+                    f"need >= {min_markers} to constrain orientation; staying WARMING_UP",
+                    throttle_duration_sec=2.0,
+                )
+                return
             inflation = (
                 self.get_parameter("initial_covariance_inflation")
                 .get_parameter_value()
@@ -201,7 +221,7 @@ class DockPoseFilter(Node):
             )
 
     def _transform_pose(
-        self, msg: PoseWithCovarianceStamped, tf: TransformStamped
+        self, msg: DockPoseMeasurement, tf: TransformStamped
     ) -> PoseWithCovarianceStamped:
         target_frame = (
             self.get_parameter("target_frame").get_parameter_value().string_value
