@@ -29,9 +29,14 @@ T_LIMIT = 10.0
 @pytest.mark.skipif(not GAINS.exists(), reason="no tuned gains committed yet")
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda s: s.name)
 def test_scenario_converges_within_limit(scenario):
-    params = CoarsePbvsParams(**yaml.safe_load(GAINS.read_text()))
-    tr = run(params, scenario)
-    assert metrics.converged(tr.t, tr.forward, params.handoff_range_m, TOL_POS, T_LIMIT)
+    gains = yaml.safe_load(GAINS.read_text())
+    # handoff_range_m / surge_taper_range_m are prototyping-sim concepts (the
+    # convergence target range), not production CoarsePbvsParams gains...
+    handoff_range_m = gains.pop("handoff_range_m")
+    gains.pop("surge_taper_range_m", None)
+    params = CoarsePbvsParams(**gains)
+    tr = run(params, scenario, handoff_range_m)
+    assert metrics.converged(tr.t, tr.forward, handoff_range_m, TOL_POS, T_LIMIT)
     assert metrics.converged(tr.t, tr.left, 0.0, TOL_POS, T_LIMIT)
     assert metrics.converged(tr.t, tr.up, 0.0, TOL_POS, T_LIMIT)
     assert metrics.converged(tr.t, tr.yaw_err, 0.0, TOL_YAW, T_LIMIT)

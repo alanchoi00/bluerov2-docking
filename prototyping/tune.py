@@ -70,16 +70,25 @@ def _row(name: str, tr, handoff: float) -> str:
 
 def main() -> None:
     gains = load_gains()
-    params = CoarsePbvsParams(**gains)
+    # handoff_range_m / surge_taper_range_m are sim-only concepts, not
+    # CoarsePbvsParams gains. Split them out for the params; keep the full dict
+    # intact for save_gains so the YAML round-trips unchanged.
+    handoff_range_m = gains["handoff_range_m"]
+    param_gains = {
+        k: v
+        for k, v in gains.items()
+        if k not in ("handoff_range_m", "surge_taper_range_m")
+    }
+    params = CoarsePbvsParams(**param_gains)
 
     trajs = {}
     print("\ncoarse PBVS tuning -- per-scenario metrics:")
     for sc in SCENARIOS:
-        tr = run(params, sc)
+        tr = run(params, sc, handoff_range_m)
         trajs[sc.name] = tr
-        print(_row(sc.name, tr, params.handoff_range_m))
+        print(_row(sc.name, tr, handoff_range_m))
 
-    plots.plot_all(trajs, params.handoff_range_m, RESULTS)
+    plots.plot_all(trajs, handoff_range_m, RESULTS)
     save_gains(gains)
     print(f"\nplots -> {RESULTS}/step_*.png")
     print(f"gains -> {GAINS_YAML}\n")

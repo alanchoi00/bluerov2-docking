@@ -33,6 +33,7 @@ class Trajectory:
 def run(
     params: CoarsePbvsParams,
     scenario: Scenario,
+    handoff_range_m: float,
     dt: float = 0.01,
     t_max: float = 15.0,
 ) -> Trajectory:
@@ -42,6 +43,18 @@ def run(
     controller = CoarsePbvsController(params)
     controller.reset()
 
+    # Coarse approach servoes to a STANDOFF point handoff_range_m in front of the
+    # dock along the approach axis (the vehicle holds dock_heading), then hands
+    # off to fine alignment -- it does not drive into the dock. Mirrors the
+    # production guidance, which feeds the controller range-to-standoff. The
+    # standoff sits handoff_range_m back from the dock along the heading vector.
+    approach = np.array(
+        [np.cos(scenario.dock_heading), np.sin(scenario.dock_heading), 0.0]
+    )
+    standoff_pos_world = (
+        np.asarray(scenario.dock_pos_world, dtype=float) - handoff_range_m * approach
+    )
+
     n = int(round(t_max / dt))
     cols = {k: np.zeros(n) for k in
             ("t", "fwd", "left", "up", "yaw", "cs", "csw", "ch", "cy")}
@@ -50,12 +63,17 @@ def run(
         rel, yaw_err = dock_pose_in_body(
             model.eta, scenario.dock_pos_world, scenario.dock_heading
         )
-        cmd = controller.step(rel, yaw_err, dt)
+        rel_standoff, _ = dock_pose_in_body(
+            model.eta, standoff_pos_world, scenario.dock_heading
+        )
+        cmd = controller.step(rel_standoff, yaw_err, dt)
         model.step(
             np.array([cmd.surge, cmd.sway, cmd.heave, 0.0, 0.0, cmd.yaw_rate])
         )
 
         cols["t"][i] = i * dt
+        # Log the true range-to-dock; it converges to handoff_range_m (forward),
+        # while lateral/vertical converge to 0 on the approach axis.
         cols["fwd"][i], cols["left"][i], cols["up"][i] = rel
         cols["yaw"][i] = yaw_err
         cols["cs"][i], cols["csw"][i] = cmd.surge, cmd.sway
