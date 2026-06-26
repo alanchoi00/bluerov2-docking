@@ -17,7 +17,11 @@ def generate_launch_description():
             DeclareLaunchArgument("use_joy", default_value="false"),
             DeclareLaunchArgument("use_key", default_value="false"),
             DeclareLaunchArgument("use_ardusub", default_value="true"),
-            DeclareLaunchArgument("flight_mode", default_value="POSHOLD"),
+            # ALT_HOLD: vehicle holds depth, leaves horizontal open to cmd_vel.
+            # POSHOLD would fight the PBVS sway/surge commands. The docking FSM
+            # also commands ALT_HOLD on entry; this default keeps standalone runs
+            # (use_control without the FSM) correct too.
+            DeclareLaunchArgument("flight_mode", default_value="ALT_HOLD"),
             DeclareLaunchArgument("use_mock_led", default_value="true"),
             DeclareLaunchArgument("use_aruco", default_value="true"),
             DeclareLaunchArgument("use_foxglove", default_value="false"),
@@ -109,6 +113,23 @@ def generate_launch_description():
                     )
                 ),
                 launch_arguments={"target_frame": "map"}.items(),
+                condition=IfCondition(LaunchConfiguration("use_control")),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [FindPackageShare("control"), "launch/fine_align.launch.py"]
+                    )
+                ),
+                launch_arguments={"target_frame": "map"}.items(),
+                condition=IfCondition(LaunchConfiguration("use_control")),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [FindPackageShare("orchestrator"), "launch/docking_fsm.launch.py"]
+                    )
+                ),
                 condition=IfCondition(LaunchConfiguration("use_control")),
             ),
         ]
