@@ -29,6 +29,10 @@ if(BUILD_TESTING)
     control/integration/test_coarse_approach_node.py
     TIMEOUT 60
   )
+  ament_add_pytest_test(test_coarse_gate
+    control/integration/test_coarse_gate.py
+    TIMEOUT 60
+  )
 endif()
 
 ament_package()

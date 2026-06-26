@@ -17,7 +17,7 @@ from tf2_ros import Buffer, TransformListener, TransformException
 from control.pbvs import CoarsePbvsController, CoarsePbvsParams, approach_speed_limit
 from control import guidance as guidance_lib
 from control import health_gate as hg
-from interfaces.msg import FilterHealth, CoarseApproachStatus
+from interfaces.msg import FilterHealth, CoarseApproachStatus, DockingState
 
 
 class CoarseApproach(Node):
@@ -69,6 +69,7 @@ class CoarseApproach(Node):
         self._latest_pose: PoseWithCovarianceStamped | None = None
         self._latest_pose_t: float | None = None
         self._latest_health: int | None = None
+        self._latest_state: int | None = None
 
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
@@ -93,6 +94,9 @@ class CoarseApproach(Node):
         )
         self.create_subscription(
             FilterHealth, "/perception/dock_pose_filtered/health", self._on_health, qos
+        )
+        self.create_subscription(
+            DockingState, "/docking/state", self._on_state, qos
         )
 
         rate = self.get_parameter("control_rate_hz").get_parameter_value().double_value
@@ -140,6 +144,9 @@ class CoarseApproach(Node):
 
     def _on_health(self, msg: FilterHealth) -> None:
         self._latest_health = int(msg.status)
+
+    def _on_state(self, msg: DockingState) -> None:
+        self._latest_state = int(msg.state)
 
     def _pose_too_old(self) -> bool:
         if self._latest_pose_t is None:
@@ -202,6 +209,11 @@ class CoarseApproach(Node):
         self._pub_standoff.publish(msg)
 
     def _tick(self) -> None:
+        # Active-phase gate: stay silent (publish nothing) when the docking FSM
+        # has another phase active, so we never fight the active controller on
+        # the shared /cmd_vel. Permissive until the FSM first asserts a state.
+        if self._latest_state is not None and self._latest_state != DockingState.COARSE:
+            return
         if self._latest_pose is not None:
             self._publish_standoff()
         if (
