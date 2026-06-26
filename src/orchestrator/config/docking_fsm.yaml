@@ -1,0 +1,8 @@
+docking_fsm:
+  ros__parameters:
+    use_sim_time: true
+    tick_rate_hz: 10.0
+    loss_timeout_cycles: 20       # ~2 s of sustained loss before demote
+    drift_timeout_cycles: 10      # ~1 s past demote range before demote
+    demote_range_m: 1.5           # FINE -> COARSE if range exceeds this
+    alt_hold_mode: "ALT_HOLD"
