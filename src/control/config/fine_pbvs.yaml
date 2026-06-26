@@ -1,0 +1,38 @@
+fine_align:
+  ros__parameters:
+    use_sim_time: true
+
+    kp_surge: 0.6
+    kp_sway: 0.8
+    kd_sway: 0.0
+    kp_heave: 2.0
+    kd_heave: 0.0
+    kp_yaw: 1.0
+    kd_yaw: 0.0
+    v_max_surge: 0.12
+    v_max_sway: 0.15
+    v_max_heave: 0.2
+    v_max_yaw: 0.3
+    approach_speed_slope: 0.15
+    approach_speed_floor: 0.03
+
+    target_frame: "map"
+    # target IS the dock entry: aim at the dock pose origin, no standoff offset
+    aim_offset_in_dock: [0.0, 0.0, 0.0]
+    standoff_distance_m: 0.0
+
+    # align-then-advance gate tolerances (tight)
+    align_lateral_tol_m: 0.03
+    align_vertical_tol_m: 0.03
+    align_yaw_tol_rad: 0.05
+
+    # seated latch tolerances
+    seated_range_m: 0.10
+    seated_lateral_tol_m: 0.03
+    seated_vertical_tol_m: 0.03
+    seated_yaw_tol_rad: 0.05
+    seated_debounce_cycles: 10
+
+    degraded_gain_scale: 0.5
+    control_rate_hz: 20.0
+    max_pose_age_s: 1.0
