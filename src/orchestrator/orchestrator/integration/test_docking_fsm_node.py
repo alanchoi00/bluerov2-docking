@@ -78,7 +78,10 @@ def _load_params():
         get_package_share_directory("orchestrator"), "config", "docking_fsm.yaml")
     with open(cfg) as f:
         values = yaml.safe_load(f)["docking_fsm"]["ros__parameters"]
-    return [Parameter(name=k, value=v) for k, v in values.items() if k != "use_sim_time"]
+    params = [Parameter(name=k, value=v) for k, v in values.items() if k != "use_sim_time"]
+    # viewer's timer/publisher races in-process teardown; off for tests
+    params.append(Parameter("enable_viewer", Parameter.Type.BOOL, False))
+    return params
 
 
 def _spin(node, harness, feed, *, iterations, period=0.05):

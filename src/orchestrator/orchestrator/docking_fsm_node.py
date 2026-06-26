@@ -69,6 +69,9 @@ class DockingFSM(Node):
         self.declare_parameter("drift_timeout_cycles", ptype.INTEGER)
         self.declare_parameter("demote_range_m", ptype.DOUBLE)
         self.declare_parameter("alt_hold_mode", ptype.STRING)
+        # Visualization only. Disabled in tests, where the viewer's timer and
+        # publisher race node teardown and segfault.
+        self.declare_parameter("enable_viewer", True)
 
         # Injected in tests (a fake); a real MAVROS adapter otherwise.
         self.vehicle_io = vehicle_io if vehicle_io is not None else VehicleIO(self)
@@ -160,7 +163,8 @@ class DockingFSM(Node):
 
         self._fsm_thread = threading.Thread(target=_run, daemon=True)
         self._fsm_thread.start()
-        YasminViewerPub(sm, "DOCKING", node=self)
+        if self.get_parameter("enable_viewer").get_parameter_value().bool_value:
+            YasminViewerPub(sm, "DOCKING", node=self)
 
     def destroy_node(self):
         # Stop the FSM thread before tearing down ROS objects: otherwise a state
