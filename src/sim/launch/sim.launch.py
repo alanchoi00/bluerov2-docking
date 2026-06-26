@@ -5,15 +5,30 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    # With the joystick deadman, autonomy publishes to /cmd_vel_auto and is
+    # relayed to /cmd_vel only while the deadman button is held; otherwise the
+    # controllers drive /cmd_vel directly (legacy behaviour).
+    cmd_vel_topic = PythonExpression(
+        [
+            "'/cmd_vel_auto' if '",
+            LaunchConfiguration("use_deadman"),
+            "' == 'true' else '/cmd_vel'",
+        ]
+    )
     return LaunchDescription(
         [
             DeclareLaunchArgument("use_docking_rviz", default_value="false"),
+            DeclareLaunchArgument("use_deadman", default_value="false"),
             DeclareLaunchArgument("use_joy", default_value="false"),
             DeclareLaunchArgument("use_key", default_value="false"),
             DeclareLaunchArgument("use_ardusub", default_value="true"),
@@ -112,7 +127,10 @@ def generate_launch_description():
                         ]
                     )
                 ),
-                launch_arguments={"target_frame": "map"}.items(),
+                launch_arguments={
+                    "target_frame": "map",
+                    "cmd_vel_topic": cmd_vel_topic,
+                }.items(),
                 condition=IfCondition(LaunchConfiguration("use_control")),
             ),
             IncludeLaunchDescription(
@@ -121,7 +139,10 @@ def generate_launch_description():
                         [FindPackageShare("control"), "launch/fine_align.launch.py"]
                     )
                 ),
-                launch_arguments={"target_frame": "map"}.items(),
+                launch_arguments={
+                    "target_frame": "map",
+                    "cmd_vel_topic": cmd_vel_topic,
+                }.items(),
                 condition=IfCondition(LaunchConfiguration("use_control")),
             ),
             IncludeLaunchDescription(
@@ -131,6 +152,19 @@ def generate_launch_description():
                     )
                 ),
                 condition=IfCondition(LaunchConfiguration("use_control")),
+            ),
+            # Joystick deadman: relays /cmd_vel_auto -> /cmd_vel only while the
+            # deadman button (RB) is held. Requires use_joy for a /joy source.
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("orchestrator"),
+                            "launch/autonomy_deadman.launch.py",
+                        ]
+                    )
+                ),
+                condition=IfCondition(LaunchConfiguration("use_deadman")),
             ),
         ]
     )

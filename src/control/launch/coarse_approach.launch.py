@@ -9,6 +9,7 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("target_frame", default_value="map"),
+            DeclareLaunchArgument("cmd_vel_topic", default_value="/cmd_vel"),
             Node(
                 package="control",
                 executable="coarse_approach_node",
@@ -19,6 +20,7 @@ def generate_launch_description():
                     ),
                     {"target_frame": LaunchConfiguration("target_frame")},
                 ],
+                remappings=[("/cmd_vel", LaunchConfiguration("cmd_vel_topic"))],
                 output="screen",
             ),
         ]
