@@ -12,6 +12,12 @@ install(PROGRAMS
   RENAME docking_fsm_node
 )
 
+install(PROGRAMS
+  orchestrator/autonomy_deadman_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME autonomy_deadman_node
+)
+
 install(DIRECTORY config/ DESTINATION share/${PROJECT_NAME}/config)
 install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch)
 
@@ -22,6 +28,10 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_docking_fsm_node
     orchestrator/integration/test_docking_fsm_node.py
     TIMEOUT 90
+  )
+  ament_add_pytest_test(test_autonomy_deadman_node
+    orchestrator/integration/test_autonomy_deadman_node.py
+    TIMEOUT 60
   )
 endif()
 
