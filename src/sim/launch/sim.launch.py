@@ -32,11 +32,12 @@ def generate_launch_description():
             DeclareLaunchArgument("use_joy", default_value="false"),
             DeclareLaunchArgument("use_key", default_value="false"),
             DeclareLaunchArgument("use_ardusub", default_value="true"),
-            # ALT_HOLD: vehicle holds depth, leaves horizontal open to cmd_vel.
-            # POSHOLD would fight the PBVS sway/surge commands. The docking FSM
-            # also commands ALT_HOLD on entry; this default keeps standalone runs
-            # (use_control without the FSM) correct too.
-            DeclareLaunchArgument("flight_mode", default_value="ALT_HOLD"),
+            # POSHOLD at idle: holds the armed heading, so the vehicle stays put
+            # at startup. ALT_HOLD leaves heading free and the vehicle settles
+            # onto the autopilot heading reference (~90 deg yaw drift). The docking
+            # FSM commands ALT_HOLD on COARSE entry, so the controllers still get
+            # the horizontal authority they need once docking actually starts.
+            DeclareLaunchArgument("flight_mode", default_value="POSHOLD"),
             DeclareLaunchArgument("use_mock_led", default_value="true"),
             DeclareLaunchArgument("use_aruco", default_value="true"),
             DeclareLaunchArgument("use_foxglove", default_value="false"),
