@@ -6,11 +6,12 @@ https://github.com/user-attachments/assets/768a735d-8360-44a3-a05e-0bcd23649349
 
 ## Overview
 
-The system drives the BlueROV2 onto a dock through a perception-to-control pipeline:
+The system drives the BlueROV2 onto a dock through a perception-to-control pipeline, sequenced by a finite-state machine:
 
 1. **Perception** fuses multiple ArUco markers into a single 6-DOF dock pose and smooths it with a Kalman filter, publishing the filtered pose plus a health signal. A simulated LED point cloud provides a complementary long-range cue.
-2. **Coarse approach** (PBVS) servos on the filtered dock pose to drive the vehicle to a standoff point on the dock's entry axis, ready for handoff.
-3. **Fine alignment** (impedance control, planned) takes over at close range for final docking.
+2. **Coarse approach** (PBVS) servos on the filtered dock pose to drive the vehicle to a standoff point on the dock's entry axis, ready for handoff. Runs in `ALT_HOLD` (the autopilot holds depth during the transit).
+3. **Fine alignment** (align-then-advance PBVS) takes over at the standoff and drives the vehicle onto the dock entry, holding lateral/vertical/yaw alignment before each step forward. Runs in `STABILIZE` so the controller owns the precise terminal descent.
+4. **Orchestrator** — a [YASMIN](https://github.com/uleroboticsgroup/yasmin) state machine sequences `IDLE → COARSE → FINE → DOCKED`, gates each phase controller via `/docking/state`, and owns the flight-mode and arming transitions. The operator engages autonomy by holding a joystick deadman button (momentary); releasing hands control back to manual `POSHOLD`.
 
 ### Packages
 
@@ -19,8 +20,9 @@ The system drives the BlueROV2 onto a dock through a perception-to-control pipel
 | `description` | Docking station Gazebo model, world file, RViz + Foxglove configs |
 | `sim` | Simulation launch file |
 | `perception` | ArUco detection, multi-marker fusion + Kalman filter, LED mock publisher |
-| `control` | Coarse approach PBVS controller |
-| `interfaces` | Custom messages (filter health, coarse approach status) |
+| `control` | Coarse approach + fine alignment PBVS controllers |
+| `orchestrator` | YASMIN docking FSM + joystick deadman/engage relay |
+| `interfaces` | Custom messages (filter health, dock-pose measurement, coarse/fine status, docking state) |
 
 ## Prerequisites
 
@@ -102,14 +104,17 @@ ros2 launch sim sim.launch.py
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `use_ardusub` | `true` | Start ArduSub SITL + MAVROS bridge |
-| `flight_mode` | `POSHOLD` | ArduSub flight mode |
+| `flight_mode` | `POSHOLD` | ArduSub startup flight mode (the docking FSM overrides it per phase when `use_control:=true`) |
 | `use_joy` | `false` | Joystick teleop |
 | `use_key` | `false` | Keyboard teleop |
 | `use_mock_led` | `true` | Publish simulated LED point cloud |
 | `use_aruco` | `true` | Run ArUco marker detection |
 | `use_docking_rviz` | `false` | Open RViz with docking config |
 | `use_foxglove` | `false` | Start `foxglove_bridge` (WebSocket on port 8765) |
-| `use_control` | `false` | Start the coarse approach PBVS controller (`control` package) |
+| `use_control` | `false` | Start the full docking stack: coarse + fine PBVS controllers and the docking FSM |
+| `use_deadman` | `false` | Joystick deadman: relay `/cmd_vel_auto` → `/cmd_vel` only while the deadman button is held, and publish `/docking/engaged` to engage/disengage the FSM |
+| `use_fsm_viewer` | `false` | Web FSM visualizer (YASMIN viewer) at `http://localhost:<fsm_viewer_port>` |
+| `fsm_viewer_port` | `5000` | Port for the FSM visualizer |
 
 E.g., launch without ArduSub for faster startup:
 
@@ -117,7 +122,14 @@ E.g., launch without ArduSub for faster startup:
 ros2 launch sim sim.launch.py use_ardusub:=false use_docking_rviz:=true
 ```
 
-> The coarse controller (`use_control:=true`) assumes the vehicle owns horizontal control, i.e. `ALT_HOLD`. The default `POSHOLD` holds position and fights its sway/surge commands, so run it with `flight_mode:=ALT_HOLD`.
+Run the full docking stack with joystick engage and the FSM viewer:
+
+```bash
+ros2 launch sim sim.launch.py use_control:=true use_joy:=true use_deadman:=true \
+  use_fsm_viewer:=true use_docking_rviz:=true
+```
+
+> With `use_control:=true` the docking FSM owns the flight mode per phase (`POSHOLD` at idle, `ALT_HOLD` for coarse, `STABILIZE` for fine), so `flight_mode` only sets the *startup* mode — leave it at the `POSHOLD` default. Hold the joystick deadman button (default: RB / button 5) to engage autonomy; release to hand control back to manual `POSHOLD`.
 
 ### Foxglove
 
