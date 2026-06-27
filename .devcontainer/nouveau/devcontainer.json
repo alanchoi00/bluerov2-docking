@@ -21,6 +21,7 @@
     "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
     "PULSE_SERVER": "${localEnv:PULSE_SERVER}"
   },
+  "forwardPorts": [5000],
   "remoteEnv": {
     "PATH": "/home/ubuntu/.venv/blue/bin:${containerEnv:PATH}"
   },
