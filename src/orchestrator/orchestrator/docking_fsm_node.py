@@ -215,9 +215,8 @@ class FineState(State):
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
-        # STABILIZE: drop the autopilot depth-hold so the fine controller owns the
-        # precise terminal descent (ALT_HOLD fights small heave commands). CoarseState
-        # restores ALT_HOLD on a DEMOTE back to coarse.
+        # STABILIZE: hand depth to the controller for the terminal descent (ALT_HOLD
+        # fights small heave commands). CoarseState restores ALT_HOLD on a DEMOTE.
         self._node.vehicle_io.set_mode(self._node.param_str("fine_mode"))
         self._node._coarse_ready = False   # invalidate stale flags on entry
         self._node._fine_seated = False
