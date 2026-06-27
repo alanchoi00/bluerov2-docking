@@ -6,3 +6,4 @@ docking_fsm:
     drift_timeout_cycles: 10      # ~1 s past demote range before demote
     demote_range_m: 1.5           # FINE -> COARSE if range exceeds this
     alt_hold_mode: "ALT_HOLD"
+    idle_mode: "POSHOLD"

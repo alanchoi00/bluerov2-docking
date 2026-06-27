@@ -3,6 +3,7 @@
 uint8 COARSE = 0
 uint8 FINE = 1
 uint8 DOCKED = 2
+uint8 IDLE = 3
 
 std_msgs/Header header
 
