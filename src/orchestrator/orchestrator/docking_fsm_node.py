@@ -61,7 +61,7 @@ class DockingFSM(Node):
         self.declare_parameter("loss_timeout_cycles", ptype.INTEGER)
         self.declare_parameter("drift_timeout_cycles", ptype.INTEGER)
         self.declare_parameter("demote_range_m", ptype.DOUBLE)
-        self.declare_parameter("alt_hold_mode", ptype.STRING)
+        self.declare_parameter("coarse_mode", ptype.STRING)
         self.declare_parameter("fine_mode", ptype.STRING)
         self.declare_parameter("idle_mode", ptype.STRING)
         # Visualization only. Disabled in tests, where the viewer's timer and
@@ -196,7 +196,7 @@ class CoarseState(State):
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
-        self._node.vehicle_io.set_mode(self._node.param_str("alt_hold_mode"))
+        self._node.vehicle_io.set_mode(self._node.param_str("coarse_mode"))
         self._node._coarse_ready = False   # invalidate stale flags on entry
         self._node._fine_seated = False
         period = 1.0 / self._node.param_double("tick_rate_hz")
