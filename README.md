@@ -8,7 +8,7 @@ https://github.com/user-attachments/assets/768a735d-8360-44a3-a05e-0bcd23649349
 
 The system drives the BlueROV2 onto a dock through a perception-to-control pipeline, sequenced by a finite-state machine:
 
-1. **Perception** fuses multiple ArUco markers into a single 6-DOF dock pose and smooths it with a Kalman filter, publishing the filtered pose plus a health signal. A simulated LED point cloud provides a complementary long-range cue.
+1. **Perception** fuses multiple ArUco markers into a single 6-DOF dock pose and smooths it with a Kalman filter, publishing the filtered pose plus a health signal. (Far-range acquisition is out of scope — the pipeline assumes the dock is already detected.)
 2. **Coarse approach** (PBVS) servos on the filtered dock pose to drive the vehicle to a standoff point on the dock's entry axis, ready for handoff. Runs in `ALT_HOLD` (the autopilot holds depth during the transit).
 3. **Fine alignment** (align-then-advance PBVS) takes over at the standoff and drives the vehicle onto the dock entry, holding lateral/vertical/yaw alignment before each step forward. Runs in `STABILIZE` so the controller owns the precise terminal descent.
 4. **Orchestrator** — a [YASMIN](https://github.com/uleroboticsgroup/yasmin) state machine sequences `IDLE → COARSE → FINE → DOCKED`, gates each phase controller via `/docking/state`, and owns the flight-mode and arming transitions. The operator engages autonomy by holding a joystick deadman button (momentary); releasing hands control back to manual `POSHOLD`.
