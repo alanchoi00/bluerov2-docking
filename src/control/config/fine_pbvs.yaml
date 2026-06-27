@@ -11,36 +11,44 @@ fine_align:
     kd_sway: 0.3      # damp the lateral limit-cycle wobble (pure-P sway oscillates)
     kp_heave: 2.0
     kd_heave: 0.0
+    # The vehicle is positively buoyant: pure-P heave settles a few cm high, so it
+    # bumps the top of the dock and jams instead of entering. The integral term
+    # supplies the constant down-thrust that holds it at the true entry height.
+    # i_max_heave caps the integral's authority (anti-windup) to 0.1 m/s.
+    ki_heave: 0.15
     kp_yaw: 1.0
     kd_yaw: 0.0
     v_max_surge: 0.07
     v_max_sway: 0.15
     v_max_heave: 0.2
     v_max_yaw: 0.3
+    i_max_heave: 0.1
     approach_speed_slope: 0.10
     approach_speed_floor: 0.02
 
     target_frame: "map"
-    # target IS the dock entry. Z=0.042 raises the aim 42mm above the dock pose
-    # origin (per dock geometry); without it the vehicle settled ~4.5cm high and
-    # never met the vertical align tolerance, so surge stayed gated to 0.
-    aim_offset_in_dock: [0.0, 0.0, 0.042]
+    # Aim at the true dock entry (the dock pose origin). The old +0.042 Z was a
+    # band-aid for the heave steady-state offset: it made `aligned` trigger while
+    # the body was physically ~4cm high, so the vehicle nosed into the top of the
+    # dock and jammed. With ki_heave now closing the vertical error, the aim points
+    # at the real hole and the vehicle descends into it.
+    aim_offset_in_dock: [0.0, 0.0, 0.0]
     standoff_distance_m: 0.0
 
-    # align-then-advance gate tolerances. Vertical loosened to 0.06: pure-P heave
-    # leaves a few-cm steady-state offset, and too-tight a tol keeps `aligned`
-    # false forever (surge stays gated), stalling at the standoff.
+    # align-then-advance gate tolerances. Vertical tightened back to 0.04 now that
+    # the integral closes the error: `aligned` must mean the body is genuinely at
+    # the entry height (a few cm high is enough to bump the dock and jam), not just
+    # near a raised aim point.
     align_lateral_tol_m: 0.03
-    align_vertical_tol_m: 0.06
+    align_vertical_tol_m: 0.04
     align_yaw_tol_rad: 0.05
 
-    # seated latch tolerances. Vertical raised to 0.06 to match align: pure-P
-    # heave holds a ~4.5cm steady-state offset, so a 0.03 seat tol is unachievable
-    # and the vehicle would converge but never latch. Tighten only if heave gets
-    # an integral term to actually close the vertical error.
+    # seated latch tolerances. Vertical tightened to 0.04 to match align: the
+    # integral drives the steady-state vertical error to ~0, so a tight seat tol is
+    # achievable and ensures the vehicle has physically entered before latching.
     seated_range_m: 0.10
     seated_lateral_tol_m: 0.03
-    seated_vertical_tol_m: 0.06
+    seated_vertical_tol_m: 0.04
     seated_yaw_tol_rad: 0.05
     seated_debounce_cycles: 10
 

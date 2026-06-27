@@ -17,6 +17,7 @@ class CoarsePbvsParams:
     kd_sway: float
     kp_heave: float
     kd_heave: float
+    ki_heave: float  # integral gain: closes the buoyancy steady-state offset
     kp_yaw: float
     kd_yaw: float
 
@@ -24,6 +25,7 @@ class CoarsePbvsParams:
     v_max_sway: float  # m/s
     v_max_heave: float  # m/s
     v_max_yaw: float  # rad/s
+    i_max_heave: float  # anti-windup: max heave (m/s) the integral term alone may add
 
 
 @dataclass(frozen=True)
@@ -70,6 +72,10 @@ class CoarsePbvsController:
         self._prev_lateral: float | None = None
         self._prev_vertical: float | None = None
         self._prev_yaw_err: float | None = None
+        # Accumulated vertical error for integral heave action. Cleared here so a
+        # re-engaged approach (phase gate / health block calls reset()) does not
+        # carry stale windup from a previous run.
+        self._int_vertical: float = 0.0
 
     def step(self, rel_pos_body: np.ndarray, yaw_err: float, dt: float) -> CmdVel:
         """Compute one velocity command from the current relative dock pose."""
@@ -91,9 +97,17 @@ class CoarsePbvsController:
             self._p.v_max_sway,
         )
 
+        # PID on the vertical axis. The vehicle is positively buoyant: a constant
+        # upward disturbance that pure P/PD cannot hold against, so it settles a
+        # few cm high and the body bumps the top of the dock. The integral term
+        # accumulates the residual error to supply the steady down-thrust that
+        # holds the vehicle at the true dock height. Anti-windup lives in
+        # _update_vertical_integral so a saturated heave does not wind it up.
+        self._int_vertical = self._update_vertical_integral(vertical_up, dt)
         heave = clamp(
             self._p.kp_heave * vertical_up
-            + self._p.kd_heave * rate(vertical_up, self._prev_vertical) / dt,
+            + self._p.kd_heave * rate(vertical_up, self._prev_vertical) / dt
+            + self._p.ki_heave * self._int_vertical,
             self._p.v_max_heave,
         )
 
@@ -109,3 +123,21 @@ class CoarsePbvsController:
         self._prev_yaw_err = yaw_err
 
         return CmdVel(surge, sway, heave, yaw_rate)
+
+    def _update_vertical_integral(self, vertical_up: float, dt: float) -> float:
+        """Accumulate the vertical error for integral heave action, with anti-windup.
+
+        self._int_vertical holds the bare error integral; ki_heave is applied once,
+        in step(). Folding ki in here would double-apply the gain and decay the
+        accumulated history each tick (a leaky filter, not an integrator).
+        """
+        if self._p.ki_heave == 0.0:
+            return 0.0
+
+        # Clamp the integral so its output contribution ki*int stays within
+        # +/- i_max_heave: anti-windup.
+        self._int_vertical = clamp(
+            self._int_vertical + vertical_up * dt,
+            self._p.i_max_heave / self._p.ki_heave,
+        )
+        return self._int_vertical

@@ -19,6 +19,7 @@ def make_params(**overrides) -> CoarsePbvsParams:
         kd_sway=0.1,
         kp_heave=0.5,
         kd_heave=0.1,
+        ki_heave=0.0,  # no integral by default: keeps the arithmetic tests pure P/PD
         kp_yaw=0.8,
         kd_yaw=0.1,
         # generous limits so the arithmetic tests do not hit saturation
@@ -26,6 +27,7 @@ def make_params(**overrides) -> CoarsePbvsParams:
         v_max_sway=1.0,
         v_max_heave=1.0,
         v_max_yaw=1.0,
+        i_max_heave=1.0,
     )
     base.update(overrides)
     return CoarsePbvsParams(**base)
@@ -149,3 +151,56 @@ def test_approach_speed_limit_ramp_floor_ceiling():
     assert approach_speed_limit(2.0, 0.2, 0.05, 0.3) == pytest.approx(0.3)  # ceiling
     assert approach_speed_limit(1.0, 0.2, 0.05, 0.3) == pytest.approx(0.2)  # linear ramp
     assert approach_speed_limit(0.1, 0.2, 0.05, 0.3) == pytest.approx(0.05)  # floor
+
+
+# --- integral heave action (closes the buoyancy steady-state offset) -----------
+
+def test_integral_off_by_default_leaves_heave_pure_p():
+    # ki_heave=0 (the default in make_params): integral must contribute nothing,
+    # so a constant error gives the same heave on every step (pure P).
+    c = controller(kp_heave=0.5, kd_heave=0.0, ki_heave=0.0)
+    err = np.array([0.0, 0.0, 0.2])
+    first = c.step(err, 0.0, 0.1).heave
+    for _ in range(10):
+        last = c.step(err, 0.0, 0.1).heave
+    assert first == pytest.approx(0.5 * 0.2)
+    assert last == pytest.approx(0.5 * 0.2)
+
+
+def test_integral_accumulates_to_strengthen_heave():
+    # A constant vertical error: the integral should accumulate and push the heave
+    # command beyond the pure-P value, closing the steady-state offset over time.
+    c = controller(
+        kp_heave=0.5, kd_heave=0.0, ki_heave=0.2, i_max_heave=1.0, v_max_heave=10.0
+    )
+    err = np.array([0.0, 0.0, -0.1])  # vehicle high -> target below -> command down
+    first = c.step(err, 0.0, 0.1).heave
+    for _ in range(30):
+        last = c.step(err, 0.0, 0.1).heave
+    assert last < first              # integral makes the down-command stronger
+    assert last < 0.5 * -0.1         # stronger than pure P alone
+
+
+def test_integral_anti_windup_caps_contribution():
+    # kp=kd=0 so heave IS the integral term. Under a large sustained error the
+    # integral must not wind up unbounded: its contribution (ki_heave * integral)
+    # is capped at i_max_heave. ki_heave != 1 on purpose: a kp catches a double
+    # application of the gain (storing ki*int instead of the bare integral).
+    c = controller(
+        kp_heave=0.0, kd_heave=0.0, ki_heave=0.5, i_max_heave=0.1, v_max_heave=10.0
+    )
+    err = np.array([0.0, 0.0, 1.0])
+    for _ in range(500):
+        cmd = c.step(err, 0.0, 0.1)
+    assert cmd.heave == pytest.approx(0.1, abs=1e-6)
+
+
+def test_reset_clears_integral():
+    c = controller(kp_heave=0.0, kd_heave=0.0, ki_heave=1.0, i_max_heave=10.0,
+                   v_max_heave=10.0)
+    err = np.array([0.0, 0.0, 1.0])
+    for _ in range(10):
+        c.step(err, 0.0, 0.1)        # wind the integral up
+    c.reset()
+    cmd = c.step(np.array([0.0, 0.0, 0.0]), 0.0, 0.1)
+    assert cmd.heave == pytest.approx(0.0)  # no stale windup after reset

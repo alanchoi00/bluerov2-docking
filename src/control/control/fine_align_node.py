@@ -60,12 +60,14 @@ class FineAlign(Node):
             "kd_sway",
             "kp_heave",
             "kd_heave",
+            "ki_heave",
             "kp_yaw",
             "kd_yaw",
             "v_max_surge",
             "v_max_sway",
             "v_max_heave",
             "v_max_yaw",
+            "i_max_heave",
             "approach_speed_slope",
             "approach_speed_floor",
         ):
@@ -116,12 +118,14 @@ class FineAlign(Node):
             kd_sway=g("kd_sway"),
             kp_heave=g("kp_heave"),
             kd_heave=g("kd_heave"),
+            ki_heave=g("ki_heave"),
             kp_yaw=g("kp_yaw"),
             kd_yaw=g("kd_yaw"),
             v_max_surge=g("v_max_surge"),
             v_max_sway=g("v_max_sway"),
             v_max_heave=g("v_max_heave"),
             v_max_yaw=g("v_max_yaw"),
+            i_max_heave=g("i_max_heave"),
         )
 
     def _align_tol(self) -> fg.AlignTol:
