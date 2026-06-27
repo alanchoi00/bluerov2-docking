@@ -61,7 +61,8 @@ class DockingFSM(Node):
         self.declare_parameter("loss_timeout_cycles", ptype.INTEGER)
         self.declare_parameter("drift_timeout_cycles", ptype.INTEGER)
         self.declare_parameter("demote_range_m", ptype.DOUBLE)
-        self.declare_parameter("alt_hold_mode", ptype.STRING)
+        self.declare_parameter("coarse_mode", ptype.STRING)
+        self.declare_parameter("fine_mode", ptype.STRING)
         self.declare_parameter("idle_mode", ptype.STRING)
         # Visualization only. Disabled in tests, where the viewer's timer and
         # publisher race node teardown and segfault.
@@ -177,6 +178,9 @@ class IdleState(State):
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
+        # Re-arm on idle so manual control works after a DOCKED disarm (no-op if
+        # already armed). DOCKED disarms; IDLE re-arms -- symmetric.
+        self._node.vehicle_io.set_arm(True)
         self._node.vehicle_io.set_mode(self._node.param_str("idle_mode"))
         period = 1.0 / self._node.param_double("tick_rate_hz")
         while rclpy.ok() and not self._node._stop.is_set():
@@ -192,7 +196,7 @@ class CoarseState(State):
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
-        self._node.vehicle_io.set_mode(self._node.param_str("alt_hold_mode"))
+        self._node.vehicle_io.set_mode(self._node.param_str("coarse_mode"))
         self._node._coarse_ready = False   # invalidate stale flags on entry
         self._node._fine_seated = False
         period = 1.0 / self._node.param_double("tick_rate_hz")
@@ -211,6 +215,9 @@ class FineState(State):
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
+        # STABILIZE: hand depth to the controller for the terminal descent (ALT_HOLD
+        # fights small heave commands). CoarseState restores ALT_HOLD on a DEMOTE.
+        self._node.vehicle_io.set_mode(self._node.param_str("fine_mode"))
         self._node._coarse_ready = False   # invalidate stale flags on entry
         self._node._fine_seated = False
         self._node._fine_range = 0.0

@@ -45,27 +45,27 @@ BLOCKED = 2
 class Tolerances:
     position_m: float
     axis_offset_m: float
-    heading_rad: float
+    yaw_rad: float
     debounce_cycles: int
 
 
 def within_tolerances(
     range_to_standoff_m: float,
     axis_offset_m: float,
-    heading_err_rad: float,
+    yaw_err_rad: float,
     tol: Tolerances,
 ) -> tuple[bool, bool]:
     within_pos = (
         range_to_standoff_m < tol.position_m and axis_offset_m < tol.axis_offset_m
     )
-    within_head = abs(heading_err_rad) < tol.heading_rad
-    return within_pos, within_head
+    within_yaw = abs(yaw_err_rad) < tol.yaw_rad
+    return within_pos, within_yaw
 
 
 def decide_phase(
     blocked: bool,
     within_pos: bool,
-    within_head: bool,
+    within_yaw: bool,
     healthy: bool,
     ready_counter: int,
     was_ready: bool,
@@ -80,7 +80,7 @@ def decide_phase(
     tolerance boundary."""
     if blocked:
         return BLOCKED, False, 0
-    good = within_pos and within_head and healthy
+    good = within_pos and within_yaw and healthy
     counter = ready_counter + 1 if good else ready_counter - 1
     counter = max(0, min(counter, tol.debounce_cycles))
     ready = counter > 0 if was_ready else counter >= tol.debounce_cycles

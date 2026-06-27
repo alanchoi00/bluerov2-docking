@@ -10,9 +10,9 @@ uint8 phase
 float64 range_to_standoff_m
 float64 axis_offset_m
 float64 vertical_error_m
-float64 heading_error_rad
+float64 yaw_error_rad
 
 bool within_position_tol
-bool within_heading_tol
+bool within_yaw_tol
 bool dock_healthy
 bool ready_for_handoff

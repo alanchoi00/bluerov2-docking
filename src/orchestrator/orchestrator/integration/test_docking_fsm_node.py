@@ -112,6 +112,7 @@ def test_starts_idle_in_poshold(ros_context):
     _spin(node, harness, lambda i: harness.engage(False), iterations=10)
     assert harness.states and harness.states[0] == DockingState.IDLE
     assert "POSHOLD" in io.modes
+    assert True in io.arms, "IDLE must re-arm so manual control works after DOCKED"
     node.destroy_node(); harness.destroy_node()
 
 
@@ -151,6 +152,8 @@ def test_coarse_to_fine_on_handoff(ros_context):
     _spin(node, harness, lambda i: (harness.engage(True), harness.coarse(ready=True)),
           iterations=20)
     assert DockingState.FINE in harness.states
+    # FINE drops the autopilot depth-hold so the controller owns the descent
+    assert "STABILIZE" in io.modes
     node.destroy_node(); harness.destroy_node()
 
 

@@ -72,8 +72,8 @@ def generate_launch_description():
                 parameters=[
                     {
                         "use_sim_time": use_sim_time,
-                        "reference_marker_size": REFERENCE_MARKER_SIZE,
-                        "marker_sizes": MARKER_SIZES,
+                        "reference_marker_size_m": REFERENCE_MARKER_SIZE,
+                        "marker_sizes_m": MARKER_SIZES,
                     }
                 ],
                 output="screen",
@@ -85,7 +85,7 @@ def generate_launch_description():
                 parameters=[
                     {
                         "use_sim_time": use_sim_time,
-                        "noise_scale_alpha": NOISE_SCALE_ALPHA,
+                        "noise_scale_alpha_pos": NOISE_SCALE_ALPHA,
                         "noise_scale_alpha_rot": NOISE_SCALE_ALPHA_ROT,
                         "consensus_threshold_deg": 8.0,
                         "min_markers_for_consensus": 3,

@@ -1,8 +1,8 @@
 """Integration test: aruco_fusion node round-trip.
 
 Launches aruco_fusion, publishes 9 PoseStamped messages on the per-marker
-topics, asserts a fused PoseWithCovarianceStamped appears on the output
-topic with reasonable values.
+topics, asserts a fused DockPoseMeasurement appears on the output topic with
+reasonable values.
 """
 
 import time
@@ -12,7 +12,8 @@ import pytest
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseStamped
+from interfaces.msg import DockPoseMeasurement
 
 
 MARKER_IDS = (201, 202, 301, 302, 303, 304, 305, 401, 402)
@@ -34,10 +35,10 @@ class _Harness(Node):
             mid: self.create_publisher(PoseStamped, f"/perception/aruco_{mid}", 10)
             for mid in MARKER_IDS
         }
-        self._received: list[PoseWithCovarianceStamped] = []
+        self._received: list[DockPoseMeasurement] = []
         self.create_subscription(
-            PoseWithCovarianceStamped,
-            "/perception/aruco_dock_pose",
+            DockPoseMeasurement,
+            "/perception/dock_pose_measured",
             lambda m: self._received.append(m),
             10,
         )

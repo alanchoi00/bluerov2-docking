@@ -66,17 +66,12 @@ class ArucoFusion(Node):
         super().__init__("aruco_fusion")
 
         self.declare_parameter("consensus_threshold_deg", 8.0)
-        self.declare_parameter("noise_scale_alpha", 2.0)
+        self.declare_parameter("noise_scale_alpha_pos", 2.0)
         # Rotation-noise scale for the PnP-error kernel sigma_rot = alpha * r / s.
         # Derived from the same pixel-noise physics as position (same alpha).
         self.declare_parameter("noise_scale_alpha_rot", 0.001)
         self.declare_parameter("min_markers_for_consensus", 3)
 
-        # Legacy viz topic: plain PoseWithCovarianceStamped so RViz/Foxglove
-        # can render the raw measurement covariance ellipsoid unchanged.
-        self._pub = self.create_publisher(
-            PoseWithCovarianceStamped, "/perception/aruco_dock_pose", 10
-        )
         # Machine-readable measurement consumed by dock_pose_filter. Same pose +
         # covariance, plus the marker count the fix is built on (num_markers),
         # so the filter can refuse to initialize on an under-determined frame.
@@ -100,7 +95,7 @@ class ArucoFusion(Node):
             .double_value
         )
         alpha = (
-            self.get_parameter("noise_scale_alpha").get_parameter_value().double_value
+            self.get_parameter("noise_scale_alpha_pos").get_parameter_value().double_value
         )
         alpha_rot = (
             self.get_parameter("noise_scale_alpha_rot")
@@ -176,8 +171,6 @@ class ArucoFusion(Node):
         cov6[:3, :3] = fused.position_covariance
         cov6[3:, 3:] = fused.orientation_covariance
         out.pose.covariance = cov6.flatten().tolist()
-
-        self._pub.publish(out)
 
         measurement = DockPoseMeasurement()
         measurement.header = out.header

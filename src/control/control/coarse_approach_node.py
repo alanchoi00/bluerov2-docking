@@ -14,7 +14,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformListener, TransformException
 
-from control.pbvs import CoarsePbvsController, CoarsePbvsParams, approach_speed_limit
+from control.pbvs import PbvsController, PbvsParams, approach_speed_limit
 from control import guidance as guidance_lib
 from control import health_gate as hg
 from interfaces.msg import FilterHealth, CoarseApproachStatus, DockingState
@@ -42,11 +42,12 @@ class CoarseApproach(Node):
             "standoff_distance_m",
             "position_tol_m",
             "axis_offset_tol_m",
-            "heading_tol_rad",
+            "yaw_tol_rad",
             "degraded_gain_scale",
             "control_rate_hz",
             "max_pose_age_s",
             "kp_surge",
+            "kd_surge",
             "kp_sway",
             "kd_sway",
             "kp_heave",
@@ -63,7 +64,7 @@ class CoarseApproach(Node):
             self.declare_parameter(name, ptype.DOUBLE)
 
         # gains are read once here; tolerances are read live each tick
-        self._controller = CoarsePbvsController(self._params())
+        self._controller = PbvsController(self._params())
         self._ready_counter = 0
         self._ready = False
         self._latest_pose: PoseWithCovarianceStamped | None = None
@@ -103,19 +104,17 @@ class CoarseApproach(Node):
         self._dt = 1.0 / rate
         self.create_timer(self._dt, self._tick)
         self.get_logger().info("coarse_approach ready")
-        # Precondition, not enforced here: flight-mode ownership belongs to the
-        # docking state machine. This node assumes the vehicle owns
-        # horizontal control (ALT_HOLD). In POSHOLD, ArduSub holds position and
-        # fights the sway/surge commands, so horizontal control is undefined.
+        # Assumes the FSM has set ALT_HOLD; in POSHOLD ArduSub fights cmd_vel.
         self.get_logger().warn(
             "coarse_approach assumes ALT_HOLD; horizontal control is undefined "
             "in POSHOLD (ArduSub position-hold fights cmd_vel)"
         )
 
-    def _params(self) -> CoarsePbvsParams:
+    def _params(self) -> PbvsParams:
         g = lambda n: self.get_parameter(n).get_parameter_value().double_value
-        return CoarsePbvsParams(
+        return PbvsParams(
             kp_surge=g("kp_surge"),
+            kd_surge=g("kd_surge"),
             kp_sway=g("kp_sway"),
             kd_sway=g("kd_sway"),
             kp_heave=g("kp_heave"),
@@ -134,7 +133,7 @@ class CoarseApproach(Node):
         return hg.Tolerances(
             position_m=gd("position_tol_m"),
             axis_offset_m=gd("axis_offset_tol_m"),
-            heading_rad=gd("heading_tol_rad"),
+            yaw_rad=gd("yaw_tol_rad"),
             debounce_cycles=gi("ready_debounce_cycles"),
         )
 
@@ -209,9 +208,8 @@ class CoarseApproach(Node):
         self._pub_standoff.publish(msg)
 
     def _tick(self) -> None:
-        # Active-phase gate: stay silent (publish nothing) when the docking FSM
-        # has another phase active, so we never fight the active controller on
-        # the shared /cmd_vel. Permissive until the FSM first asserts a state.
+        # Active-phase gate: silent while another phase is active (don't fight it on
+        # the shared /cmd_vel). Permissive until the FSM first asserts a state.
         if self._latest_state is not None and self._latest_state != DockingState.COARSE:
             self._controller.reset()
             self._ready_counter = 0
@@ -281,8 +279,7 @@ class CoarseApproach(Node):
 
         cmd = self._controller.step(g.rel_pos_body, g.yaw_err, self._dt)
 
-        # distance-gated surge cap: bound the approach speed by distance to the
-        # dock so it slows progressively and limits worst-case collision speed.
+        # distance-gated surge cap: slows the approach as it nears the dock
         gd = lambda n: self.get_parameter(n).get_parameter_value().double_value
         surge_cap = approach_speed_limit(
             g.range_to_dock_m,
@@ -300,13 +297,13 @@ class CoarseApproach(Node):
         self._pub_cmd.publish(twist)
 
         tol = self._tolerances()
-        within_pos, within_head = hg.within_tolerances(
+        within_pos, within_yaw = hg.within_tolerances(
             g.range_to_standoff_m, g.axis_offset_m, g.yaw_err, tol
         )
         phase, ready, self._ready_counter = hg.decide_phase(
             blocked=False,
             within_pos=within_pos,
-            within_head=within_head,
+            within_yaw=within_yaw,
             healthy=gate.dock_healthy,
             ready_counter=self._ready_counter,
             was_ready=self._ready,
@@ -320,9 +317,9 @@ class CoarseApproach(Node):
         st.range_to_standoff_m = g.range_to_standoff_m
         st.axis_offset_m = g.axis_offset_m
         st.vertical_error_m = g.vertical_error_m
-        st.heading_error_rad = g.yaw_err
+        st.yaw_error_rad = g.yaw_err
         st.within_position_tol = within_pos
-        st.within_heading_tol = within_head
+        st.within_yaw_tol = within_yaw
         st.dock_healthy = gate.dock_healthy
         st.ready_for_handoff = ready
         self._pub_status.publish(st)

@@ -130,3 +130,24 @@ def test_heading_faces_the_dock():
     # -> yaw_err = atan2(0.5, 1.0) > 0 (turn left to face the dock)
     assert g.yaw_err > 0.0
     assert math.isclose(g.yaw_err, math.atan2(0.5, 1.0), abs_tol=1e-6)
+
+
+def test_yaw_boresight_well_conditioned_near_aim():
+    # Dock identity at origin; entry axis (boresight) = world +Y. ROV faces +Y
+    # (aligned with the boresight) sitting ~3.6 cm from the aim with a small side
+    # offset. "Face aim" yaw is singular here (blows up); boresight yaw stays ~0.
+    dock = dict(
+        dock_pos=(0.0, 0.0, 0.0),
+        dock_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        aim_offset_in_dock=AIM_OFFSET,
+        standoff_distance_m=0.0,
+    )
+    qz, qw = math.sin(math.pi / 4), math.cos(math.pi / 4)  # face world +Y
+    rov = dict(rov_pos=(0.02, 0.28, 0.042), rov_quat_xyzw=(0.0, 0.0, qz, qw))
+
+    face_aim = compute_guidance(**dock, **rov, yaw_to_boresight=False)
+    boresight = compute_guidance(**dock, **rov, yaw_to_boresight=True)
+
+    assert face_aim.range_to_dock_m < 0.05  # genuinely on top of the aim point
+    assert abs(face_aim.yaw_err) > math.radians(20)  # singular: large/bogus angle
+    assert abs(boresight.yaw_err) < math.radians(1)  # stable: ~0 (truly aligned)

@@ -1,7 +1,6 @@
 # Per-frame fused dock-pose measurement from aruco_fusion.
 #
-# Carries the same pose+covariance as the legacy /perception/aruco_dock_pose
-# (PoseWithCovarianceStamped) topic, plus how many markers backed this fix.
+# Carries the fused pose+covariance plus how many markers backed this fix.
 # The dock_pose_filter uses num_markers to refuse initialization on an
 # under-determined (e.g. single-marker) measurement, which is subject to the
 # planar PnP flip/tilt ambiguity.

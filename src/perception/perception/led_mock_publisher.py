@@ -28,8 +28,8 @@ class LedMockPublisher(Node):
     def __init__(self):
         super().__init__("led_mock_publisher")
 
-        self.declare_parameter("noise_stddev", 0.001)
-        self.declare_parameter("detection_distance", 10.0)
+        self.declare_parameter("noise_stddev_m", 0.001)
+        self.declare_parameter("detection_distance_m", 10.0)
         self.declare_parameter("gz_world_name", "ocean_world")
         self.declare_parameter("dock_model_name", "docking_station")
         self.declare_parameter("led_link_names", _LED_LINK_NAMES_DEFAULT)
@@ -151,10 +151,10 @@ class LedMockPublisher(Node):
             return
 
         noise_stddev = (
-            self.get_parameter("noise_stddev").get_parameter_value().double_value
+            self.get_parameter("noise_stddev_m").get_parameter_value().double_value
         )
         max_dist = (
-            self.get_parameter("detection_distance").get_parameter_value().double_value
+            self.get_parameter("detection_distance_m").get_parameter_value().double_value
         )
 
         info = self._camera_info

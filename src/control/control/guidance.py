@@ -47,6 +47,7 @@ def compute_guidance(
     rov_quat_xyzw,
     aim_offset_in_dock,
     standoff_distance_m: float,
+    yaw_to_boresight: bool = False,
 ) -> GuidanceResult:
     r_dock = Rotation.from_quat(list(dock_quat_xyzw))
     r_rov = Rotation.from_quat(list(rov_quat_xyzw))
@@ -60,14 +61,22 @@ def compute_guidance(
     rel_pos_body = r_rov.inv().apply(rel_world)  # [forward, left, up]
     range_to_standoff = float(np.linalg.norm(rel_pos_body))
 
-    # heading: face the dock (aim point). Well-conditioned everywhere (the dock is
-    # always ~standoff_distance ahead), keeps the dock in the camera FOV, and
-    # equals boresight alignment once on-axis at the standoff.
     aim_in_body = r_rov.inv().apply(aim - np.asarray(rov_pos, dtype=float))
-    yaw_err = math.atan2(aim_in_body[1], aim_in_body[0])
     range_to_dock = float(np.linalg.norm(aim_in_body))
+    boresight_world = r_dock.apply(np.array([0.0, 1.0, 0.0]))  # dock +Y (entry axis)
 
-    boresight_world = r_dock.apply(np.array([0.0, 1.0, 0.0]))  # dock +Y
+    if yaw_to_boresight:
+        # Terminal yaw: align body +X with the dock entry axis. The boresight is
+        # a unit direction, so this is well-conditioned at ANY range -- use it for
+        # fine alignment, which drives onto the aim point.
+        boresight_in_body = r_rov.inv().apply(boresight_world)
+        yaw_err = math.atan2(boresight_in_body[1], boresight_in_body[0])
+    else:
+        # Coarse yaw: face the aim point. Well-conditioned at standoff range, but
+        # singular as range_to_dock -> 0 (atan2 of a vanishing vector), so the
+        # coarse phase must never drive onto the aim.
+        yaw_err = math.atan2(aim_in_body[1], aim_in_body[0])
+
     d = np.asarray(rov_pos, dtype=float) - aim
     along = float(np.dot(d, boresight_world))
     perp = d - along * boresight_world

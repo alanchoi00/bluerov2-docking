@@ -5,5 +5,6 @@ docking_fsm:
     loss_timeout_cycles: 20       # ~2 s of sustained loss before demote
     drift_timeout_cycles: 10      # ~1 s past demote range before demote
     demote_range_m: 1.5           # FINE -> COARSE if range exceeds this
-    alt_hold_mode: "ALT_HOLD"
+    coarse_mode: "ALT_HOLD"     # COARSE: autopilot holds depth during the transit
+    fine_mode: "STABILIZE"      # FINE: controller owns depth for the terminal descent
     idle_mode: "POSHOLD"
