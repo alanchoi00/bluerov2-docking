@@ -244,6 +244,7 @@ class FineAlign(Node):
             ),
             aim_offset_in_dock=list(aim_offset),
             standoff_distance_m=standoff,
+            yaw_to_boresight=True,
         )
 
         cmd = self._controller.step(g.rel_pos_body, g.yaw_err, self._dt)

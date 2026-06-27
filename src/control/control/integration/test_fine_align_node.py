@@ -57,12 +57,14 @@ class _Harness(Node):
         tf.transform.rotation.w = float(qw)
         self._tf.sendTransform(tf)
 
-    def feed(self, dock_x, dock_y, state=DockingState.FINE, health=FilterHealth.HEALTHY):
+    def feed(self, dock_x, dock_y, state=DockingState.FINE, health=FilterHealth.HEALTHY,
+             dock_qz=0.0, dock_qw=1.0):
         m = PoseWithCovarianceStamped()
         m.header.frame_id = "map"
         m.pose.pose.position.x = float(dock_x)
         m.pose.pose.position.y = float(dock_y)
-        m.pose.pose.orientation.w = 1.0
+        m.pose.pose.orientation.z = float(dock_qz)
+        m.pose.pose.orientation.w = float(dock_qw)
         self._pose_pub.publish(m)
         h = FilterHealth()
         h.status = health
@@ -141,9 +143,13 @@ def test_surge_when_aligned(ros_context):
 
     node = FineAlign(parameter_overrides=_load_params())
     harness = _Harness()
-    # dock straight ahead, centred -> aligned -> surge allowed
+    # ROV at origin facing +x. Dock 0.5 ahead, oriented -90deg about Z so its
+    # boresight (dock +Y) points along world +X -> the ROV heading is aligned
+    # with the dock entry axis (boresight yaw ~ 0) -> surge allowed.
     harness.send_tf(0, 0, 0, 0, 0, 0, 1)
-    _run(node, harness, lambda: harness.feed(0.5, 0.0), iterations=15)
+    qz, qw = -0.7071067811865476, 0.7071067811865476
+    _run(node, harness, lambda: harness.feed(0.5, 0.0, dock_qz=qz, dock_qw=qw),
+         iterations=15)
     assert any(c.linear.x > 0.0 for c in harness.cmds), \
         "expected forward surge once aligned"
     node.destroy_node()
