@@ -42,10 +42,13 @@ fine_align:
     align_vertical_tol_m: 0.025
     align_yaw_tol_rad: 0.05
 
-    # seated latch tolerances. Vertical 0.03: the integral holds the error near 0 in
-    # STABILIZE, so a tight seat tol is achievable and ensures the vehicle has
-    # physically entered the dock before latching.
-    seated_range_m: 0.10
+    # seated latch tolerances. seated_range_m is the definition-of-done along the
+    # approach axis: once base_link is within it (debounced), the FSM goes DOCKED and
+    # disarms, freezing the vehicle there. 0.05 leaves ~4cm to the dock pose; the PD
+    # decelerates hard in the final cm (kp*range -> 0 while kd brakes), so going much
+    # tighter trades a long slow creep and risks the debounce never latching.
+    # Lateral/vertical 0.03: stiff pure-P holds these near 0 in STABILIZE.
+    seated_range_m: 0.05
     seated_lateral_tol_m: 0.03
     seated_vertical_tol_m: 0.03
     seated_yaw_tol_rad: 0.05
