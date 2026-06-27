@@ -152,6 +152,8 @@ def test_coarse_to_fine_on_handoff(ros_context):
     _spin(node, harness, lambda i: (harness.engage(True), harness.coarse(ready=True)),
           iterations=20)
     assert DockingState.FINE in harness.states
+    # FINE drops the autopilot depth-hold so the controller owns the descent
+    assert "STABILIZE" in io.modes
     node.destroy_node(); harness.destroy_node()
 
 

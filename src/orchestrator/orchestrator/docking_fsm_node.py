@@ -62,6 +62,7 @@ class DockingFSM(Node):
         self.declare_parameter("drift_timeout_cycles", ptype.INTEGER)
         self.declare_parameter("demote_range_m", ptype.DOUBLE)
         self.declare_parameter("alt_hold_mode", ptype.STRING)
+        self.declare_parameter("fine_mode", ptype.STRING)
         self.declare_parameter("idle_mode", ptype.STRING)
         # Visualization only. Disabled in tests, where the viewer's timer and
         # publisher race node teardown and segfault.
@@ -214,6 +215,10 @@ class FineState(State):
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
+        # STABILIZE: drop the autopilot depth-hold so the fine controller owns the
+        # precise terminal descent (ALT_HOLD fights small heave commands). CoarseState
+        # restores ALT_HOLD on a DEMOTE back to coarse.
+        self._node.vehicle_io.set_mode(self._node.param_str("fine_mode"))
         self._node._coarse_ready = False   # invalidate stale flags on entry
         self._node._fine_seated = False
         self._node._fine_range = 0.0
