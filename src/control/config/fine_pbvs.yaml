@@ -6,6 +6,7 @@ fine_align:
     # opened. Lower kp_surge + v_max_surge cap the peak; a gentler slope starts
     # the distance-based deceleration earlier; a lower floor softens the final creep.
     kp_surge: 0.4
+    kd_surge: 0.8      # brake the closing velocity so it settles at the target
     kp_sway: 0.8
     kd_sway: 0.0
     kp_heave: 2.0

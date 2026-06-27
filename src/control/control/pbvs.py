@@ -12,6 +12,7 @@ class CoarsePbvsParams:
     """Tunable gains + fixed limits."""
 
     kp_surge: float
+    kd_surge: float
     kp_sway: float
     kd_sway: float
     kp_heave: float
@@ -65,6 +66,7 @@ class CoarsePbvsController:
 
     def reset(self) -> None:
         """Clear derivative state before a fresh approach."""
+        self._prev_forward: float | None = None
         self._prev_lateral: float | None = None
         self._prev_vertical: float | None = None
         self._prev_yaw_err: float | None = None
@@ -74,7 +76,14 @@ class CoarsePbvsController:
 
         range_ahead, lateral_left, vertical_up = rel_pos_body
 
-        surge = clamp(self._p.kp_surge * range_ahead, self._p.v_max_surge)
+        # PD on the forward axis: kd_surge damps the closing velocity so the
+        # vehicle brakes as it nears the target instead of coasting through it
+        # (there is no physical stop at the dock). kd_surge=0 -> pure P.
+        surge = clamp(
+            self._p.kp_surge * range_ahead
+            + self._p.kd_surge * rate(range_ahead, self._prev_forward) / dt,
+            self._p.v_max_surge,
+        )
 
         sway = clamp(
             self._p.kp_sway * lateral_left
@@ -94,6 +103,7 @@ class CoarsePbvsController:
             self._p.v_max_yaw,
         )
 
+        self._prev_forward = range_ahead
         self._prev_lateral = lateral_left
         self._prev_vertical = vertical_up
         self._prev_yaw_err = yaw_err

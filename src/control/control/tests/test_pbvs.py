@@ -14,6 +14,7 @@ from control.pbvs import (
 def make_params(**overrides) -> CoarsePbvsParams:
     base = dict(
         kp_surge=0.4,
+        kd_surge=0.0,
         kp_sway=0.5,
         kd_sway=0.1,
         kp_heave=0.5,
@@ -58,6 +59,19 @@ def test_surge_first_step(range_ahead, v_max_surge, expected):
         np.array([range_ahead, 0.0, 0.0]), 0.0, 0.1
     )
     assert cmd.surge == pytest.approx(expected)
+
+
+def test_surge_brakes_on_closing_velocity():
+    # kd_surge damps the closing velocity. First step is pure P (no prev); as
+    # range_ahead shrinks (closing on the target) the derivative term subtracts,
+    # braking the surge below the pure-P value so the vehicle does not coast in.
+    ctrl = controller(kp_surge=1.0, kd_surge=0.5)
+    first = ctrl.step(np.array([1.0, 0.0, 0.0]), 0.0, 0.1)
+    second = ctrl.step(np.array([0.9, 0.0, 0.0]), 0.0, 0.1)
+    assert first.surge == pytest.approx(1.0)  # pure P on the first step
+    # 1.0 * 0.9 + 0.5 * (0.9 - 1.0) / 0.1 = 0.9 - 0.5 = 0.4
+    assert second.surge == pytest.approx(0.4)
+    assert second.surge < 1.0 * 0.9
 
 
 @pytest.mark.parametrize(

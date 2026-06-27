@@ -3,6 +3,7 @@ coarse_approach:
     use_sim_time: true
 
     kp_surge: 1.0
+    kd_surge: 0.0      # coarse: pure-P surge (no braking needed at the standoff)
     kp_sway: 0.8
     kd_sway: 0.0
     kp_heave: 2.0

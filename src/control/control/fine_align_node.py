@@ -55,6 +55,7 @@ class FineAlign(Node):
             "control_rate_hz",
             "max_pose_age_s",
             "kp_surge",
+            "kd_surge",
             "kp_sway",
             "kd_sway",
             "kp_heave",
@@ -110,6 +111,7 @@ class FineAlign(Node):
         g = lambda n: self.get_parameter(n).get_parameter_value().double_value
         return CoarsePbvsParams(
             kp_surge=g("kp_surge"),
+            kd_surge=g("kd_surge"),
             kp_sway=g("kp_sway"),
             kd_sway=g("kd_sway"),
             kp_heave=g("kp_heave"),
