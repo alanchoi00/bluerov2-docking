@@ -3,7 +3,7 @@ coarse_approach:
     use_sim_time: true
 
     kp_surge: 1.0
-    kd_surge: 0.0      # coarse: pure-P surge (no braking needed at the standoff)
+    kd_surge: 0.0      # pure-P surge: no braking needed before the standoff
     kp_sway: 0.8
     kd_sway: 0.0
     kp_heave: 2.0
@@ -14,10 +14,8 @@ coarse_approach:
     v_max_sway: 0.3
     v_max_heave: 0.4
     v_max_yaw: 0.5
-    # approach-speed envelope: surge capped at slope * (distance to dock), floored
-    # for the final creep and ceilinged at v_max_surge. Slows progressively near
-    # the dock and bounds collision speed. Slope lowered (0.2 -> 0.12) so it
-    # decelerates more as it nears the standoff.
+    # surge capped at slope*(distance to dock), floored for the final creep and
+    # ceilinged at v_max_surge: slows near the dock, bounds collision speed.
     approach_speed_slope: 0.12
     approach_speed_floor: 0.05
 

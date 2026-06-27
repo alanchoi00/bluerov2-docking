@@ -17,7 +17,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformListener, TransformException
 
-from control.pbvs import CoarsePbvsController, CoarsePbvsParams, approach_speed_limit
+from control.pbvs import PbvsController, PbvsParams, approach_speed_limit
 from control import guidance as guidance_lib
 from control import health_gate as hg
 from control import fine_guidance as fg
@@ -71,7 +71,7 @@ class FineAlign(Node):
         ):
             self.declare_parameter(name, ptype.DOUBLE)
 
-        self._controller = CoarsePbvsController(self._params())
+        self._controller = PbvsController(self._params())
         self._seated_counter = 0
         self._seated = False
         self._latest_pose: PoseWithCovarianceStamped | None = None
@@ -107,9 +107,9 @@ class FineAlign(Node):
         self.create_timer(self._dt, self._tick)
         self.get_logger().info("fine_align ready")
 
-    def _params(self) -> CoarsePbvsParams:
+    def _params(self) -> PbvsParams:
         g = lambda n: self.get_parameter(n).get_parameter_value().double_value
-        return CoarsePbvsParams(
+        return PbvsParams(
             kp_surge=g("kp_surge"),
             kd_surge=g("kd_surge"),
             kp_sway=g("kp_sway"),
@@ -180,11 +180,9 @@ class FineAlign(Node):
         self._publish_zero(FineAlignStatus.BLOCKED)
 
     def _tick(self) -> None:
-        # Fail-safe active-phase gate: drive ONLY when the FSM has explicitly
-        # asserted FINE. An unknown state (None, before the first /docking/state)
-        # counts as "not FINE", so the terminal controller stays silent on startup
-        # instead of commanding near the dock before it knows the phase. (Coarse is
-        # deliberately permissive at startup; fine, being terminal, is not.)
+        # Fail-safe active-phase gate: drive only when the FSM has explicitly
+        # asserted FINE (unknown state counts as not-FINE), so the terminal
+        # controller stays silent until the phase is confirmed. Coarse is permissive.
         if self._latest_state != DockingState.FINE:
             self._controller.reset()
             self._seated_counter = 0
@@ -256,7 +254,7 @@ class FineAlign(Node):
         is_aligned = fg.aligned(g.rel_pos_body, g.yaw_err, self._align_tol())
         cmd = fg.advance_command(cmd, is_aligned)
 
-        # similar to coarse_approach_node.py ln283
+        # distance-gated surge cap: slows the approach as it nears the dock
         gd = lambda n: self.get_parameter(n).get_parameter_value().double_value
         surge_cap = approach_speed_limit(
             g.range_to_dock_m,

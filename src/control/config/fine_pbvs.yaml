@@ -2,17 +2,12 @@ fine_align:
   ros__parameters:
     use_sim_time: true
 
-    # Surge tuned down: fine was lurching into the dock when the align gate
-    # opened. Lower kp_surge + v_max_surge cap the peak; a gentler slope starts
-    # the distance-based deceleration earlier; a lower floor softens the final creep.
     kp_surge: 0.4
-    kd_surge: 0.8      # brake the closing velocity so it settles at the target
+    kd_surge: 0.8      # brake the closing velocity; no physical stop at the dock
     kp_sway: 0.8
-    kd_sway: 0.3      # damp the lateral limit-cycle wobble (pure-P sway oscillates)
-    # FINE runs in STABILIZE (the FSM switches on entry), so the controller owns the
-    # descent. The sim vehicle is near-neutrally buoyant, so a stiff pure-P heave
-    # holds depth within the align/seated tolerances with no steady-state offset to
-    # integrate away -- no integral term needed.
+    kd_sway: 0.3       # damp the pure-P lateral wobble
+    # STABILIZE (FSM sets it on FINE entry) gives heave to the controller; the
+    # near-neutral vehicle holds depth on pure-P, so no integral term is needed.
     kp_heave: 2.0
     kd_heave: 0.0
     kp_yaw: 1.0
@@ -25,29 +20,18 @@ fine_align:
     approach_speed_floor: 0.02
 
     target_frame: "map"
-    # Aim at the true dock entry (the dock pose origin). An earlier +0.042 Z was a
-    # band-aid for a heave steady-state offset: it made `aligned` trigger while the
-    # body was physically ~4cm high, so the vehicle nosed into the top of the dock
-    # and jammed. In STABILIZE the controller holds the true entry height, so the aim
-    # points at the real hole and the vehicle descends into it.
-    aim_offset_in_dock: [0.0, 0.0, 0.0]
+    aim_offset_in_dock: [0.0, 0.0, 0.0]   # aim at the true dock entry (pose origin)
     standoff_distance_m: 0.0
 
-    # align-then-advance gate tolerances. Vertical tightened to 0.025: in STABILIZE
-    # the controller can drive the error to ~0 at the standoff with nothing fighting
-    # it, so `aligned` must mean the body has actually descended to entry height
-    # before any surge. This stops the vehicle racing forward while still high and
-    # landing on top of the dock (it descends in open water first, then advances).
+    # align-then-advance: `aligned` must mean the body has descended to entry height
+    # before any surge, else it races forward high and lands on the dock.
     align_lateral_tol_m: 0.03
     align_vertical_tol_m: 0.025
     align_yaw_tol_rad: 0.05
 
-    # seated latch tolerances. seated_range_m is the definition-of-done along the
-    # approach axis: once base_link is within it (debounced), the FSM goes DOCKED and
-    # disarms, freezing the vehicle there. 0.05 leaves ~4cm to the dock pose; the PD
-    # decelerates hard in the final cm (kp*range -> 0 while kd brakes), so going much
-    # tighter trades a long slow creep and risks the debounce never latching.
-    # Lateral/vertical 0.03: stiff pure-P holds these near 0 in STABILIZE.
+    # seated_range_m = definition-of-done: within it (debounced) the FSM goes DOCKED
+    # and disarms, freezing the vehicle. Tighter docks closer but the PD creeps
+    # slowly in the final cm, risking a never-latching debounce.
     seated_range_m: 0.03
     seated_lateral_tol_m: 0.03
     seated_vertical_tol_m: 0.03

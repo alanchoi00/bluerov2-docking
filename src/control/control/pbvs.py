@@ -1,4 +1,4 @@
-"""Coarse-approach PBVS control law for BlueROV2 docking."""
+"""PBVS control law for BlueROV2 docking (shared by the coarse and fine nodes)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import numpy as np
 
 
 @dataclass(frozen=True)
-class CoarsePbvsParams:
+class PbvsParams:
     """Tunable gains + fixed limits."""
 
     kp_surge: float
@@ -57,10 +57,10 @@ def approach_speed_limit(
     return float(np.clip(slope_per_s * range_to_dock_m, v_floor, v_ceiling))
 
 
-class CoarsePbvsController:
+class PbvsController:
     """Decoupled P/PD regulator: body-frame error to body velocity command."""
 
-    def __init__(self, params: CoarsePbvsParams) -> None:
+    def __init__(self, params: PbvsParams) -> None:
         self._p = params
         self.reset()
 

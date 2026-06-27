@@ -1,17 +1,17 @@
-"""Contract tests for the coarse-approach PBVS control law."""
+"""Contract tests for the PBVS control law."""
 
 import numpy as np
 import pytest
 
 from control.pbvs import (
     CmdVel,
-    CoarsePbvsController,
-    CoarsePbvsParams,
+    PbvsController,
+    PbvsParams,
     approach_speed_limit,
 )
 
 
-def make_params(**overrides) -> CoarsePbvsParams:
+def make_params(**overrides) -> PbvsParams:
     base = dict(
         kp_surge=0.4,
         kd_surge=0.0,
@@ -28,11 +28,11 @@ def make_params(**overrides) -> CoarsePbvsParams:
         v_max_yaw=1.0,
     )
     base.update(overrides)
-    return CoarsePbvsParams(**base)
+    return PbvsParams(**base)
 
 
-def controller(**overrides) -> CoarsePbvsController:
-    return CoarsePbvsController(make_params(**overrides))
+def controller(**overrides) -> PbvsController:
+    return PbvsController(make_params(**overrides))
 
 
 def test_zero_error_gives_zero_command():
