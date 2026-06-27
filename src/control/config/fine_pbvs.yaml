@@ -11,18 +11,20 @@ fine_align:
     kd_sway: 0.3      # damp the lateral limit-cycle wobble (pure-P sway oscillates)
     kp_heave: 2.0
     kd_heave: 0.0
-    # The vehicle is positively buoyant: pure-P heave settles a few cm high, so it
-    # bumps the top of the dock and jams instead of entering. The integral term
-    # supplies the constant down-thrust that holds it at the true entry height.
-    # i_max_heave caps the integral's authority (anti-windup) to 0.1 m/s.
-    ki_heave: 0.15
+    # FINE runs in STABILIZE (the FSM switches on entry), so the autopilot no longer
+    # holds depth -- this controller owns the descent outright. The vehicle is
+    # positively buoyant, so the integral must supply the *entire* hover down-thrust
+    # (not just trim an ALT_HOLD residual): hence the larger ki_heave and i_max_heave.
+    # ki_heave winds the bias in quickly to limit the float-up when depth-hold drops;
+    # i_max_heave caps that bias (anti-windup) at 0.3 m/s of authority.
+    ki_heave: 0.25
     kp_yaw: 1.0
     kd_yaw: 0.0
     v_max_surge: 0.07
     v_max_sway: 0.15
-    v_max_heave: 0.2
+    v_max_heave: 0.3
     v_max_yaw: 0.3
-    i_max_heave: 0.1
+    i_max_heave: 0.3
     approach_speed_slope: 0.10
     approach_speed_floor: 0.02
 
@@ -35,20 +37,21 @@ fine_align:
     aim_offset_in_dock: [0.0, 0.0, 0.0]
     standoff_distance_m: 0.0
 
-    # align-then-advance gate tolerances. Vertical tightened back to 0.04 now that
-    # the integral closes the error: `aligned` must mean the body is genuinely at
-    # the entry height (a few cm high is enough to bump the dock and jam), not just
-    # near a raised aim point.
+    # align-then-advance gate tolerances. Vertical tightened to 0.025: in STABILIZE
+    # the controller can drive the error to ~0 at the standoff with nothing fighting
+    # it, so `aligned` must mean the body has actually descended to entry height
+    # before any surge. This stops the vehicle racing forward while still high and
+    # landing on top of the dock (it descends in open water first, then advances).
     align_lateral_tol_m: 0.03
-    align_vertical_tol_m: 0.04
+    align_vertical_tol_m: 0.025
     align_yaw_tol_rad: 0.05
 
-    # seated latch tolerances. Vertical tightened to 0.04 to match align: the
-    # integral drives the steady-state vertical error to ~0, so a tight seat tol is
-    # achievable and ensures the vehicle has physically entered before latching.
+    # seated latch tolerances. Vertical 0.03: the integral holds the error near 0 in
+    # STABILIZE, so a tight seat tol is achievable and ensures the vehicle has
+    # physically entered the dock before latching.
     seated_range_m: 0.10
     seated_lateral_tol_m: 0.03
-    seated_vertical_tol_m: 0.04
+    seated_vertical_tol_m: 0.03
     seated_yaw_tol_rad: 0.05
     seated_debounce_cycles: 10
 
