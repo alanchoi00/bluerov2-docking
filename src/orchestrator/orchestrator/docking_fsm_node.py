@@ -177,6 +177,9 @@ class IdleState(State):
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
+        # Re-arm on idle so manual control works after a DOCKED disarm (no-op if
+        # already armed). DOCKED disarms; IDLE re-arms -- symmetric.
+        self._node.vehicle_io.set_arm(True)
         self._node.vehicle_io.set_mode(self._node.param_str("idle_mode"))
         period = 1.0 / self._node.param_double("tick_rate_hz")
         while rclpy.ok() and not self._node._stop.is_set():
