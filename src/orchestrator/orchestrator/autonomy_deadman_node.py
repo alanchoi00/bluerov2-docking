@@ -16,6 +16,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 
 
 class AutonomyDeadman(Node):
@@ -44,6 +45,7 @@ class AutonomyDeadman(Node):
             depth=10,
         )
         self._pub = self.create_publisher(Twist, out_topic, qos)
+        self._pub_engaged = self.create_publisher(Bool, "/docking/engaged", qos)
         self.create_subscription(Joy, joy_topic, self._on_joy, qos)
         self.create_subscription(Twist, in_topic, self._on_auto, qos)
         self.get_logger().info(
@@ -58,6 +60,7 @@ class AutonomyDeadman(Node):
             # coast on the last relayed command.
             self._pub.publish(Twist())
         self._held = held
+        self._pub_engaged.publish(Bool(data=held))
 
     def _on_auto(self, msg: Twist) -> None:
         if self._held:

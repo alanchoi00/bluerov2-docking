@@ -12,6 +12,7 @@ from rclpy.parameter import Parameter
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 
 _RELIABLE = QoSProfile(
     reliability=ReliabilityPolicy.RELIABLE, history=HistoryPolicy.KEEP_LAST, depth=10
@@ -34,6 +35,8 @@ class _Harness(Node):
         self._auto = self.create_publisher(Twist, "/cmd_vel_auto", _RELIABLE)
         self.out: list[Twist] = []
         self.create_subscription(Twist, "/cmd_vel", self.out.append, _RELIABLE)
+        self.engaged: list[bool] = []
+        self.create_subscription(Bool, "/docking/engaged", lambda m: self.engaged.append(m.data), _RELIABLE)
 
     def hold(self, held: bool):
         j = Joy()
@@ -120,5 +123,21 @@ def test_zero_on_release_edge(ros_context):
     assert any(
         c.linear.x == 0.0 for c in harness.out
     ), "expected a zero Twist on the release edge"
+    node.destroy_node()
+    harness.destroy_node()
+
+
+def test_publishes_engaged(ros_context):
+    from orchestrator.autonomy_deadman_node import AutonomyDeadman
+
+    node = AutonomyDeadman(parameter_overrides=_params())
+    harness = _Harness()
+
+    def feed(i):
+        harness.hold(i < 5)   # held first half, released second half
+
+    _spin(node, harness, feed, iterations=10)
+    assert True in harness.engaged, "should publish engaged=True while held"
+    assert False in harness.engaged, "should publish engaged=False when released"
     node.destroy_node()
     harness.destroy_node()
