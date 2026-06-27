@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 """docking_fsm: YASMIN orchestrator for the BlueROV2 docking mission.
 
-Sequences COARSE -> FINE -> DOCKED. Has no velocity authority: it only
+Sequences IDLE -> COARSE -> FINE -> DOCKED. Has no velocity authority: it only
 publishes the active phase on /docking/state (which the phase controllers
 self-gate on) and drives flight mode / arming via VehicleIO. Transition policy
 lives in the pure orchestrator.transitions helpers; this node is the ROS + YASMIN
 wiring around them.
-
-YASMIN 5.x API quick reference:
-  from yasmin import State, StateMachine, Blackboard
-  class MyState(State):
-      def __init__(self): super().__init__(outcomes=["done"])
-      def execute(self, blackboard) -> str: ...; return "done"
-  sm = StateMachine(outcomes=["docked"])
-  sm.add_state("NAME", MyState(), transitions={"done": "NEXT"})
-  sm.set_start_state("NAME")
-  outcome = sm(Blackboard())            # blocks until the machine finishes
 """
 
 import threading
@@ -26,6 +16,7 @@ from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
+from std_msgs.msg import Bool
 from yasmin import State, StateMachine, Blackboard
 from yasmin_viewer import YasminViewerPub
 
@@ -40,6 +31,8 @@ from orchestrator.vehicle_io import VehicleIO
 
 
 class Outcome:
+    ENGAGE = "engage"
+    DISENGAGE = "disengage"
     HANDOFF = "handoff"
     SEATED = "seated"
     DEMOTE = "demote"
@@ -48,6 +41,7 @@ class Outcome:
 
 
 class StateName:
+    IDLE = "idle"
     COARSE = "coarse"
     FINE = "fine"
     DOCKED = "docked"
@@ -69,6 +63,7 @@ class DockingFSM(Node):
         self.declare_parameter("drift_timeout_cycles", ptype.INTEGER)
         self.declare_parameter("demote_range_m", ptype.DOUBLE)
         self.declare_parameter("alt_hold_mode", ptype.STRING)
+        self.declare_parameter("idle_mode", ptype.STRING)
         # Visualization only. Disabled in tests, where the viewer's timer and
         # publisher race node teardown and segfault.
         self.declare_parameter("enable_viewer", True)
@@ -77,6 +72,7 @@ class DockingFSM(Node):
         self.vehicle_io = vehicle_io if vehicle_io is not None else VehicleIO(self)
 
         # Latest telemetry, written by subscriptions, read by the FSM states.
+        self._engaged = False
         self._coarse_ready = False
         self._fine_seated = False
         self._fine_range = 0.0
@@ -100,6 +96,7 @@ class DockingFSM(Node):
         self.create_subscription(
             FilterHealth, "/perception/dock_pose_filtered/health", self._on_health, qos
         )
+        self.create_subscription(Bool, "/docking/engaged", self._on_engaged, qos)
 
         self.get_logger().info("docking_fsm ready")
         self._start_fsm()
@@ -130,28 +127,24 @@ class DockingFSM(Node):
     def _on_health(self, msg: FilterHealth) -> None:
         self._health = int(msg.status)
 
+    def _on_engaged(self, msg: Bool) -> None:
+        self._engaged = bool(msg.data)
+
     def _start_fsm(self) -> None:
         self._stop = threading.Event()
-        sm = StateMachine(outcomes=[Outcome.FINISHED])
-        sm.add_state(
-            StateName.COARSE,
-            CoarseState(self),
-            transitions={Outcome.HANDOFF: StateName.FINE},
-        )
-        sm.add_state(
-            StateName.FINE,
-            FineState(self),
-            transitions={
-                Outcome.SEATED: StateName.DOCKED,
-                Outcome.DEMOTE: StateName.COARSE,
-            },
-        )
-        sm.add_state(
-            StateName.DOCKED,
-            DockedState(self),
-            transitions={Outcome.DONE: Outcome.FINISHED},
-        )
-        sm.set_start_state(StateName.COARSE)
+        sm = StateMachine(outcomes=[Outcome.FINISHED])  # nominal, unreachable
+        sm.add_state(StateName.IDLE, IdleState(self),
+                     transitions={Outcome.ENGAGE: StateName.COARSE})
+        sm.add_state(StateName.COARSE, CoarseState(self),
+                     transitions={Outcome.DISENGAGE: StateName.IDLE,
+                                  Outcome.HANDOFF: StateName.FINE})
+        sm.add_state(StateName.FINE, FineState(self),
+                     transitions={Outcome.DISENGAGE: StateName.IDLE,
+                                  Outcome.SEATED: StateName.DOCKED,
+                                  Outcome.DEMOTE: StateName.COARSE})
+        sm.add_state(StateName.DOCKED, DockedState(self),
+                     transitions={Outcome.DISENGAGE: StateName.IDLE})
+        sm.set_start_state(StateName.IDLE)
 
         def _run():
             # A state loop that exits on shutdown falls off to a None outcome;
@@ -176,16 +169,35 @@ class DockingFSM(Node):
         super().destroy_node()
 
 
+class IdleState(State):
+    def __init__(self, node: DockingFSM) -> None:
+        super().__init__(outcomes=[Outcome.ENGAGE])
+        self._node = node
+
+    def execute(self, blackboard) -> str:  # type: ignore
+        self._node.vehicle_io.set_mode(self._node.param_str("idle_mode"))
+        period = 1.0 / self._node.param_double("tick_rate_hz")
+        while rclpy.ok() and not self._node._stop.is_set():
+            self._node.publish_state(DockingStateMsg.IDLE, "IDLE")
+            if self._node._engaged:
+                return Outcome.ENGAGE
+            time.sleep(period)
+
+
 class CoarseState(State):
     def __init__(self, node: DockingFSM) -> None:
-        super().__init__(outcomes=[Outcome.HANDOFF])
+        super().__init__(outcomes=[Outcome.DISENGAGE, Outcome.HANDOFF])
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
         self._node.vehicle_io.set_mode(self._node.param_str("alt_hold_mode"))
-        self._node.publish_state(DockingStateMsg.COARSE, "COARSE")
+        self._node._coarse_ready = False   # invalidate stale flags on entry
+        self._node._fine_seated = False
         period = 1.0 / self._node.param_double("tick_rate_hz")
         while rclpy.ok() and not self._node._stop.is_set():
+            self._node.publish_state(DockingStateMsg.COARSE, "COARSE")
+            if not self._node._engaged:
+                return Outcome.DISENGAGE
             if self._node._coarse_ready:
                 return Outcome.HANDOFF
             time.sleep(period)
@@ -193,11 +205,12 @@ class CoarseState(State):
 
 class FineState(State):
     def __init__(self, node: DockingFSM) -> None:
-        super().__init__(outcomes=["seated", "demote"])
+        super().__init__(outcomes=[Outcome.DISENGAGE, Outcome.SEATED, Outcome.DEMOTE])
         self._node = node
 
     def execute(self, blackboard) -> str:  # type: ignore
-        self._node.publish_state(DockingStateMsg.FINE, "FINE")
+        self._node._coarse_ready = False   # invalidate stale flags on entry
+        self._node._fine_seated = False
         loss_counter = 0
         drift_counter = 0
         loss_to = self._node.param_int("loss_timeout_cycles")
@@ -205,16 +218,15 @@ class FineState(State):
         demote_range = self._node.param_double("demote_range_m")
         period = 1.0 / self._node.param_double("tick_rate_hz")
         while rclpy.ok() and not self._node._stop.is_set():
+            self._node.publish_state(DockingStateMsg.FINE, "FINE")
+            if not self._node._engaged:
+                return Outcome.DISENGAGE
             if self._node._fine_seated:
                 return Outcome.SEATED
             loss_counter, lost = tr.sustained(
-                loss_counter, tr.is_loss(self._node._health), loss_to
-            )
+                loss_counter, tr.is_loss(self._node._health), loss_to)
             drift_counter, drifted = tr.sustained(
-                drift_counter,
-                tr.is_drift(self._node._fine_range, demote_range),
-                drift_to,
-            )
+                drift_counter, tr.is_drift(self._node._fine_range, demote_range), drift_to)
             if lost or drifted:
                 return Outcome.DEMOTE
             time.sleep(period)
@@ -222,13 +234,17 @@ class FineState(State):
 
 class DockedState(State):
     def __init__(self, node: DockingFSM) -> None:
-        super().__init__(outcomes=[Outcome.DONE])
+        super().__init__(outcomes=[Outcome.DISENGAGE])
         self._node = node
 
-    def execute(self, blackboard) -> str:
-        self._node.publish_state(DockingStateMsg.DOCKED, "DOCKED")
+    def execute(self, blackboard) -> str:  # type: ignore
         self._node.vehicle_io.set_arm(False)
-        return Outcome.DONE
+        period = 1.0 / self._node.param_double("tick_rate_hz")
+        while rclpy.ok() and not self._node._stop.is_set():
+            self._node.publish_state(DockingStateMsg.DOCKED, "DOCKED")
+            if not self._node._engaged:
+                return Outcome.DISENGAGE
+            time.sleep(period)
 
 
 def main(args=None):
