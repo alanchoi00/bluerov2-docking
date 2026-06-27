@@ -11,6 +11,7 @@ from launch.substitutions import (
     PythonExpression,
 )
 from launch_ros.actions import Node
+from launch_ros.descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -28,6 +29,11 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("use_docking_rviz", default_value="false"),
+            # Web FSM visualizer at http://localhost:<fsm_viewer_port>. Container
+            # uses --network=host, so no port forwarding is needed. Only shows
+            # data when use_control is on (the FSM publishes /fsm_viewer).
+            DeclareLaunchArgument("use_fsm_viewer", default_value="false"),
+            DeclareLaunchArgument("fsm_viewer_port", default_value="5000"),
             DeclareLaunchArgument("use_deadman", default_value="false"),
             DeclareLaunchArgument("use_joy", default_value="false"),
             DeclareLaunchArgument("use_key", default_value="false"),
@@ -166,6 +172,22 @@ def generate_launch_description():
                     )
                 ),
                 condition=IfCondition(LaunchConfiguration("use_deadman")),
+            ),
+            # YASMIN web FSM viewer (serves http://localhost:5000). The FSM node
+            # publishes /fsm_viewer; this node renders it.
+            Node(
+                package="yasmin_viewer",
+                executable="yasmin_viewer_node",
+                name="yasmin_viewer",
+                parameters=[
+                    {
+                        "port": ParameterValue(
+                            LaunchConfiguration("fsm_viewer_port"), value_type=int
+                        )
+                    }
+                ],
+                condition=IfCondition(LaunchConfiguration("use_fsm_viewer")),
+                output="screen",
             ),
         ]
     )
