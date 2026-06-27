@@ -9,31 +9,27 @@ fine_align:
     kd_surge: 0.8      # brake the closing velocity so it settles at the target
     kp_sway: 0.8
     kd_sway: 0.3      # damp the lateral limit-cycle wobble (pure-P sway oscillates)
+    # FINE runs in STABILIZE (the FSM switches on entry), so the controller owns the
+    # descent. The sim vehicle is near-neutrally buoyant, so a stiff pure-P heave
+    # holds depth within the align/seated tolerances with no steady-state offset to
+    # integrate away -- no integral term needed.
     kp_heave: 2.0
     kd_heave: 0.0
-    # FINE runs in STABILIZE (the FSM switches on entry), so the autopilot no longer
-    # holds depth -- this controller owns the descent outright. The vehicle is
-    # positively buoyant, so the integral must supply the *entire* hover down-thrust
-    # (not just trim an ALT_HOLD residual): hence the larger ki_heave and i_max_heave.
-    # ki_heave winds the bias in quickly to limit the float-up when depth-hold drops;
-    # i_max_heave caps that bias (anti-windup) at 0.3 m/s of authority.
-    ki_heave: 0.25
     kp_yaw: 1.0
     kd_yaw: 0.0
     v_max_surge: 0.07
     v_max_sway: 0.15
     v_max_heave: 0.3
     v_max_yaw: 0.3
-    i_max_heave: 0.3
     approach_speed_slope: 0.10
     approach_speed_floor: 0.02
 
     target_frame: "map"
-    # Aim at the true dock entry (the dock pose origin). The old +0.042 Z was a
-    # band-aid for the heave steady-state offset: it made `aligned` trigger while
-    # the body was physically ~4cm high, so the vehicle nosed into the top of the
-    # dock and jammed. With ki_heave now closing the vertical error, the aim points
-    # at the real hole and the vehicle descends into it.
+    # Aim at the true dock entry (the dock pose origin). An earlier +0.042 Z was a
+    # band-aid for a heave steady-state offset: it made `aligned` trigger while the
+    # body was physically ~4cm high, so the vehicle nosed into the top of the dock
+    # and jammed. In STABILIZE the controller holds the true entry height, so the aim
+    # points at the real hole and the vehicle descends into it.
     aim_offset_in_dock: [0.0, 0.0, 0.0]
     standoff_distance_m: 0.0
 
