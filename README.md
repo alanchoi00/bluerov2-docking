@@ -2,7 +2,7 @@
 
 ROS2 simulation and perception stack for autonomous BlueROV2 underwater docking using ArUco markers and LED detection. UNSW Thesis research project.
 
-<img src="assets/bluerov2_docking_demo.gif" alt="bluerov2_docking_demo_gif"/>
+https://github.com/user-attachments/assets/768a735d-8360-44a3-a05e-0bcd23649349
 
 ## Overview
 
