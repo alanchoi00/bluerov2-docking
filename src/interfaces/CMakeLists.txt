@@ -10,6 +10,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   msg/FilterHealth.msg
   msg/CoarseApproachStatus.msg
   msg/DockPoseMeasurement.msg
+  msg/FineAlignStatus.msg
+  msg/DockingState.msg
   DEPENDENCIES std_msgs geometry_msgs
 )
 

@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""coarse_approach: PBVS coarse-approach controller node.
+"""fine_align: align-then-advance PBVS controller for terminal docking.
 
-Drives the BlueROV2 to a standoff point on the dock entry axis using the
-filtered dock pose. Publishes body-frame cmd_vel + CoarseApproachStatus.
-Fixed-rate timer always emits a command (zero when BLOCKED) so ardusub_bridge
-never re-sends a stale command."""
+Takes over from coarse at the standoff point and drives the BlueROV2 onto the
+dock entry. Reuses the coarse PBVS regulator and health gate; the new behaviour
+is the align-then-advance guidance law (do not surge forward until laterally,
+vertically and angularly centred). Self-gates /cmd_vel on /docking/state so it
+only drives while the FSM has FINE active. Publishes FineAlignStatus telemetry,
+including a debounced `seated` flag the FSM reads to advance to DOCKED.
+"""
 
 import rclpy
-from geometry_msgs.msg import Twist, PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
@@ -17,32 +20,37 @@ from tf2_ros import Buffer, TransformListener, TransformException
 from control.pbvs import CoarsePbvsController, CoarsePbvsParams, approach_speed_limit
 from control import guidance as guidance_lib
 from control import health_gate as hg
-from interfaces.msg import FilterHealth, CoarseApproachStatus, DockingState
+from control import fine_guidance as fg
+from interfaces.msg import FilterHealth, FineAlignStatus, DockingState
 
 
-class CoarseApproach(Node):
+class FineAlign(Node):
     def __init__(self, **kwargs):
-        super().__init__("coarse_approach", **kwargs)
+        super().__init__("fine_align", **kwargs)
 
-        # Fail fast if the pure mirrors drift from the generated message.
+        # Fail fast if the pure mirrors drift from the generated messages.
         assert hg.WARMING_UP == FilterHealth.WARMING_UP
         assert hg.HEALTHY == FilterHealth.HEALTHY
         assert hg.DEGRADED == FilterHealth.DEGRADED
         assert hg.STALE == FilterHealth.STALE
-        assert hg.APPROACHING == CoarseApproachStatus.APPROACHING
-        assert hg.AT_STANDOFF == CoarseApproachStatus.AT_STANDOFF
-        assert hg.BLOCKED == CoarseApproachStatus.BLOCKED
+        assert fg.ALIGNING == FineAlignStatus.ALIGNING
+        assert fg.SEATED == FineAlignStatus.SEATED
+        assert fg.BLOCKED == FineAlignStatus.BLOCKED
 
-        # all values come from coarse_pbvs.yaml; declared by type, no defaults
+        # all values come from fine_pbvs.yaml; declared by type, no defaults
         ptype = Parameter.Type
         self.declare_parameter("target_frame", ptype.STRING)
         self.declare_parameter("aim_offset_in_dock", ptype.DOUBLE_ARRAY)
-        self.declare_parameter("ready_debounce_cycles", ptype.INTEGER)
+        self.declare_parameter("seated_debounce_cycles", ptype.INTEGER)
         for name in (
             "standoff_distance_m",
-            "position_tol_m",
-            "axis_offset_tol_m",
-            "heading_tol_rad",
+            "align_lateral_tol_m",
+            "align_vertical_tol_m",
+            "align_yaw_tol_rad",
+            "seated_range_m",
+            "seated_lateral_tol_m",
+            "seated_vertical_tol_m",
+            "seated_yaw_tol_rad",
             "degraded_gain_scale",
             "control_rate_hz",
             "max_pose_age_s",
@@ -62,10 +70,9 @@ class CoarseApproach(Node):
         ):
             self.declare_parameter(name, ptype.DOUBLE)
 
-        # gains are read once here; tolerances are read live each tick
         self._controller = CoarsePbvsController(self._params())
-        self._ready_counter = 0
-        self._ready = False
+        self._seated_counter = 0
+        self._seated = False
         self._latest_pose: PoseWithCovarianceStamped | None = None
         self._latest_pose_t: float | None = None
         self._latest_health: int | None = None
@@ -81,10 +88,7 @@ class CoarseApproach(Node):
         )
         self._pub_cmd = self.create_publisher(Twist, "/cmd_vel", qos)
         self._pub_status = self.create_publisher(
-            CoarseApproachStatus, "/control/coarse_approach/status", qos
-        )
-        self._pub_standoff = self.create_publisher(
-            PoseStamped, "/control/coarse_approach/standoff_pose", qos
+            FineAlignStatus, "/control/fine_align/status", qos
         )
         self.create_subscription(
             PoseWithCovarianceStamped,
@@ -95,22 +99,12 @@ class CoarseApproach(Node):
         self.create_subscription(
             FilterHealth, "/perception/dock_pose_filtered/health", self._on_health, qos
         )
-        self.create_subscription(
-            DockingState, "/docking/state", self._on_state, qos
-        )
+        self.create_subscription(DockingState, "/docking/state", self._on_state, qos)
 
         rate = self.get_parameter("control_rate_hz").get_parameter_value().double_value
         self._dt = 1.0 / rate
         self.create_timer(self._dt, self._tick)
-        self.get_logger().info("coarse_approach ready")
-        # Precondition, not enforced here: flight-mode ownership belongs to the
-        # docking state machine. This node assumes the vehicle owns
-        # horizontal control (ALT_HOLD). In POSHOLD, ArduSub holds position and
-        # fights the sway/surge commands, so horizontal control is undefined.
-        self.get_logger().warn(
-            "coarse_approach assumes ALT_HOLD; horizontal control is undefined "
-            "in POSHOLD (ArduSub position-hold fights cmd_vel)"
-        )
+        self.get_logger().info("fine_align ready")
 
     def _params(self) -> CoarsePbvsParams:
         g = lambda n: self.get_parameter(n).get_parameter_value().double_value
@@ -128,14 +122,23 @@ class CoarseApproach(Node):
             v_max_yaw=g("v_max_yaw"),
         )
 
-    def _tolerances(self) -> hg.Tolerances:
-        gi = lambda n: self.get_parameter(n).get_parameter_value().integer_value
+    def _align_tol(self) -> fg.AlignTol:
         gd = lambda n: self.get_parameter(n).get_parameter_value().double_value
-        return hg.Tolerances(
-            position_m=gd("position_tol_m"),
-            axis_offset_m=gd("axis_offset_tol_m"),
-            heading_rad=gd("heading_tol_rad"),
-            debounce_cycles=gi("ready_debounce_cycles"),
+        return fg.AlignTol(
+            lateral_m=gd("align_lateral_tol_m"),
+            vertical_m=gd("align_vertical_tol_m"),
+            yaw_rad=gd("align_yaw_tol_rad"),
+        )
+
+    def _seated_tol(self) -> fg.SeatedTol:
+        gd = lambda n: self.get_parameter(n).get_parameter_value().double_value
+        gi = lambda n: self.get_parameter(n).get_parameter_value().integer_value
+        return fg.SeatedTol(
+            range_m=gd("seated_range_m"),
+            lateral_m=gd("seated_lateral_tol_m"),
+            vertical_m=gd("seated_vertical_tol_m"),
+            yaw_rad=gd("seated_yaw_tol_rad"),
+            debounce_cycles=gi("seated_debounce_cycles"),
         )
 
     def _on_pose(self, msg: PoseWithCovarianceStamped) -> None:
@@ -155,70 +158,32 @@ class CoarseApproach(Node):
         max_age = (
             self.get_parameter("max_pose_age_s").get_parameter_value().double_value
         )
-        # negative age = clock jumped back (sim reset); treat as stale
         return age < 0.0 or age > max_age
 
     def _publish_zero(self, phase: int) -> None:
         self._pub_cmd.publish(Twist())
-        st = CoarseApproachStatus()
+        st = FineAlignStatus()
         st.header.stamp = self.get_clock().now().to_msg()
         st.phase = phase
         st.dock_healthy = False
-        st.ready_for_handoff = False
+        st.aligned = False
+        st.seated = False
         self._pub_status.publish(st)
 
     def _block(self) -> None:
         # reset clears controller state so a resumed approach has no stale jump
         self._controller.reset()
-        self._ready_counter = 0
-        self._ready = False
-        self._publish_zero(CoarseApproachStatus.BLOCKED)
-
-    def _publish_standoff(self) -> None:
-        # visualization only: the target standoff pose in the target frame
-        p = self._latest_pose.pose.pose
-        aim_offset = (
-            self.get_parameter("aim_offset_in_dock")
-            .get_parameter_value()
-            .double_array_value
-        )
-        standoff = (
-            self.get_parameter("standoff_distance_m").get_parameter_value().double_value
-        )
-        pos, quat = guidance_lib.standoff_pose_in_target(
-            dock_pos=(p.position.x, p.position.y, p.position.z),
-            dock_quat_xyzw=(
-                p.orientation.x,
-                p.orientation.y,
-                p.orientation.z,
-                p.orientation.w,
-            ),
-            aim_offset_in_dock=list(aim_offset),
-            standoff_distance_m=standoff,
-        )
-        msg = PoseStamped()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = self._latest_pose.header.frame_id
-        msg.pose.position.x = float(pos[0])
-        msg.pose.position.y = float(pos[1])
-        msg.pose.position.z = float(pos[2])
-        msg.pose.orientation.x = float(quat[0])
-        msg.pose.orientation.y = float(quat[1])
-        msg.pose.orientation.z = float(quat[2])
-        msg.pose.orientation.w = float(quat[3])
-        self._pub_standoff.publish(msg)
+        self._seated_counter = 0
+        self._seated = False
+        self._publish_zero(FineAlignStatus.BLOCKED)
 
     def _tick(self) -> None:
-        # Active-phase gate: stay silent (publish nothing) when the docking FSM
-        # has another phase active, so we never fight the active controller on
-        # the shared /cmd_vel. Permissive until the FSM first asserts a state.
-        if self._latest_state is not None and self._latest_state != DockingState.COARSE:
+        if self._latest_state is not None and self._latest_state != DockingState.FINE:
             self._controller.reset()
-            self._ready_counter = 0
-            self._ready = False
+            self._seated_counter = 0
+            self._seated = False
             return
-        if self._latest_pose is not None:
-            self._publish_standoff()
+
         if (
             self._latest_pose is None
             or self._latest_health is None
@@ -280,9 +245,10 @@ class CoarseApproach(Node):
         )
 
         cmd = self._controller.step(g.rel_pos_body, g.yaw_err, self._dt)
+        is_aligned = fg.aligned(g.rel_pos_body, g.yaw_err, self._align_tol())
+        cmd = fg.advance_command(cmd, is_aligned)
 
-        # distance-gated surge cap: bound the approach speed by distance to the
-        # dock so it slows progressively and limits worst-case collision speed.
+        # similar to coarse_approach_node.py ln283
         gd = lambda n: self.get_parameter(n).get_parameter_value().double_value
         surge_cap = approach_speed_limit(
             g.range_to_dock_m,
@@ -299,38 +265,32 @@ class CoarseApproach(Node):
         twist.angular.z = cmd.yaw_rate * gate.gain_scale
         self._pub_cmd.publish(twist)
 
-        tol = self._tolerances()
-        within_pos, within_head = hg.within_tolerances(
-            g.range_to_standoff_m, g.axis_offset_m, g.yaw_err, tol
+        stol = self._seated_tol()
+        within = fg.within_seated(g.range_to_dock_m, g.rel_pos_body, g.yaw_err, stol)
+        phase, self._seated, self._seated_counter = fg.decide_seated(
+            within,
+            gate.dock_healthy,
+            self._seated_counter,
+            self._seated,
+            stol.debounce_cycles,
         )
-        phase, ready, self._ready_counter = hg.decide_phase(
-            blocked=False,
-            within_pos=within_pos,
-            within_head=within_head,
-            healthy=gate.dock_healthy,
-            ready_counter=self._ready_counter,
-            was_ready=self._ready,
-            tol=tol,
-        )
-        self._ready = ready
 
-        st = CoarseApproachStatus()
+        st = FineAlignStatus()
         st.header.stamp = self.get_clock().now().to_msg()
         st.phase = phase
-        st.range_to_standoff_m = g.range_to_standoff_m
-        st.axis_offset_m = g.axis_offset_m
-        st.vertical_error_m = g.vertical_error_m
-        st.heading_error_rad = g.yaw_err
-        st.within_position_tol = within_pos
-        st.within_heading_tol = within_head
+        st.range_to_dock_m = g.range_to_dock_m
+        st.lateral_error_m = g.rel_pos_body[1]
+        st.vertical_error_m = g.rel_pos_body[2]
+        st.yaw_error_rad = g.yaw_err
+        st.aligned = is_aligned
+        st.seated = self._seated
         st.dock_healthy = gate.dock_healthy
-        st.ready_for_handoff = ready
         self._pub_status.publish(st)
 
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CoarseApproach()
+    node = FineAlign()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

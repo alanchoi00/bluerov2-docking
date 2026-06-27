@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>orchestrator</name>
+  <version>0.0.1</version>
+  <description>Docking mission orchestrator: YASMIN FSM sequencing the docking phases</description>
+  <maintainer email="alanchoi.uni@gmail.com">Alan Choi</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <exec_depend>interfaces</exec_depend>
+  <depend>rclpy</depend>
+  <depend>yasmin</depend>
+  <depend>yasmin_ros</depend>
+  <exec_depend>yasmin_viewer</exec_depend>
+  <depend>mavros_msgs</depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>pytest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -12,11 +12,11 @@ def generate_launch_description():
             DeclareLaunchArgument("cmd_vel_topic", default_value="/cmd_vel"),
             Node(
                 package="control",
-                executable="coarse_approach_node",
-                name="coarse_approach",
+                executable="fine_align_node",
+                name="fine_align",
                 parameters=[
                     PathJoinSubstitution(
-                        [FindPackageShare("control"), "config", "coarse_pbvs.yaml"]
+                        [FindPackageShare("control"), "config", "fine_pbvs.yaml"]
                     ),
                     {"target_frame": LaunchConfiguration("target_frame")},
                 ],

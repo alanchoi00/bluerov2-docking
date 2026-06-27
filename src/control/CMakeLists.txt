@@ -12,6 +12,12 @@ install(PROGRAMS
   RENAME coarse_approach_node
 )
 
+install(PROGRAMS
+  control/fine_align_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME fine_align_node
+)
+
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch
 )
@@ -25,8 +31,17 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_pbvs control/tests/test_pbvs.py)
   ament_add_pytest_test(test_guidance control/tests/test_guidance.py)
   ament_add_pytest_test(test_health_gate control/tests/test_health_gate.py)
+  ament_add_pytest_test(test_fine_guidance control/tests/test_fine_guidance.py)
   ament_add_pytest_test(test_coarse_approach_node
     control/integration/test_coarse_approach_node.py
+    TIMEOUT 60
+  )
+  ament_add_pytest_test(test_coarse_gate
+    control/integration/test_coarse_gate.py
+    TIMEOUT 60
+  )
+  ament_add_pytest_test(test_fine_align_node
+    control/integration/test_fine_align_node.py
     TIMEOUT 60
   )
 endif()

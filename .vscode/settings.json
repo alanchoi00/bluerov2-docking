@@ -93,12 +93,18 @@
     "latex-workshop.synctex.afterBuild.enabled": false,
     "ROS2.distro": "jazzy",
     "python.autoComplete.extraPaths": [
-        "/opt/ros/jazzy/lib/python3.10/site-packages",
-        "/opt/ros/jazzy/local/lib/python3.10/dist-packages"
+        "/opt/ros/jazzy/lib/python3.12/site-packages",
+        "/home/ubuntu/ws_docking/install/interfaces/lib/python3.12/site-packages",
+        "${workspaceFolder}/src/control",
+        "${workspaceFolder}/src/orchestrator",
+        "${workspaceFolder}/src/perception"
     ],
     "python.analysis.extraPaths": [
-        "/opt/ros/jazzy/lib/python3.10/site-packages",
-        "/opt/ros/jazzy/local/lib/python3.10/dist-packages"
+        "/opt/ros/jazzy/lib/python3.12/site-packages",
+        "/home/ubuntu/ws_docking/install/interfaces/lib/python3.12/site-packages",
+        "${workspaceFolder}/src/control",
+        "${workspaceFolder}/src/orchestrator",
+        "${workspaceFolder}/src/perception"
     ],
     "python.analysis.supportAllPythonDocuments": false,
     "python.analysis.inlayHints.callArgumentNames": "partial",
