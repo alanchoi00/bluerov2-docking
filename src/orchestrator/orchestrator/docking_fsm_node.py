@@ -36,7 +36,6 @@ class Outcome:
     HANDOFF = "handoff"
     SEATED = "seated"
     DEMOTE = "demote"
-    DONE = "done"
     FINISHED = "finished"
 
 
@@ -152,7 +151,10 @@ class DockingFSM(Node):
             try:
                 sm(Blackboard())
             except Exception as exc:
-                self.get_logger().debug(f"FSM thread ended: {exc}")
+                if self._stop.is_set() or not rclpy.ok():
+                    self.get_logger().debug(f"FSM thread ended during shutdown: {exc}")
+                else:
+                    self.get_logger().error(f"FSM supervisor thread died: {exc}")
 
         self._fsm_thread = threading.Thread(target=_run, daemon=True)
         self._fsm_thread.start()
@@ -211,6 +213,7 @@ class FineState(State):
     def execute(self, blackboard) -> str:  # type: ignore
         self._node._coarse_ready = False   # invalidate stale flags on entry
         self._node._fine_seated = False
+        self._node._fine_range = 0.0
         loss_counter = 0
         drift_counter = 0
         loss_to = self._node.param_int("loss_timeout_cycles")

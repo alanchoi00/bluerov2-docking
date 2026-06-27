@@ -179,6 +179,9 @@ class FineAlign(Node):
 
     def _tick(self) -> None:
         if self._latest_state is not None and self._latest_state != DockingState.FINE:
+            self._controller.reset()
+            self._seated_counter = 0
+            self._seated = False
             return
 
         if (

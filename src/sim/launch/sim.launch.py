@@ -16,9 +16,12 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    # With the joystick deadman, autonomy publishes to /cmd_vel_auto and is
-    # relayed to /cmd_vel only while the deadman button is held; otherwise the
-    # controllers drive /cmd_vel directly (legacy behaviour).
+    # With the joystick deadman (use_deadman:=true), autonomy publishes to
+    # /cmd_vel_auto and is relayed to /cmd_vel only while the deadman button is
+    # held. Without it, /cmd_vel_auto is unused and the controllers write /cmd_vel
+    # directly. Note: autonomy requires use_deadman:=true to publish
+    # /docking/engaged; without that the FSM stays in IDLE and docking never
+    # starts regardless of use_control.
     cmd_vel_topic = PythonExpression(
         [
             "'/cmd_vel_auto' if '",

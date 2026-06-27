@@ -213,6 +213,9 @@ class CoarseApproach(Node):
         # has another phase active, so we never fight the active controller on
         # the shared /cmd_vel. Permissive until the FSM first asserts a state.
         if self._latest_state is not None and self._latest_state != DockingState.COARSE:
+            self._controller.reset()
+            self._ready_counter = 0
+            self._ready = False
             return
         if self._latest_pose is not None:
             self._publish_standoff()
