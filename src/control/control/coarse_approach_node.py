@@ -42,7 +42,7 @@ class CoarseApproach(Node):
             "standoff_distance_m",
             "position_tol_m",
             "axis_offset_tol_m",
-            "heading_tol_rad",
+            "yaw_tol_rad",
             "degraded_gain_scale",
             "control_rate_hz",
             "max_pose_age_s",
@@ -133,7 +133,7 @@ class CoarseApproach(Node):
         return hg.Tolerances(
             position_m=gd("position_tol_m"),
             axis_offset_m=gd("axis_offset_tol_m"),
-            heading_rad=gd("heading_tol_rad"),
+            yaw_rad=gd("yaw_tol_rad"),
             debounce_cycles=gi("ready_debounce_cycles"),
         )
 
@@ -297,13 +297,13 @@ class CoarseApproach(Node):
         self._pub_cmd.publish(twist)
 
         tol = self._tolerances()
-        within_pos, within_head = hg.within_tolerances(
+        within_pos, within_yaw = hg.within_tolerances(
             g.range_to_standoff_m, g.axis_offset_m, g.yaw_err, tol
         )
         phase, ready, self._ready_counter = hg.decide_phase(
             blocked=False,
             within_pos=within_pos,
-            within_head=within_head,
+            within_yaw=within_yaw,
             healthy=gate.dock_healthy,
             ready_counter=self._ready_counter,
             was_ready=self._ready,
@@ -317,9 +317,9 @@ class CoarseApproach(Node):
         st.range_to_standoff_m = g.range_to_standoff_m
         st.axis_offset_m = g.axis_offset_m
         st.vertical_error_m = g.vertical_error_m
-        st.heading_error_rad = g.yaw_err
+        st.yaw_error_rad = g.yaw_err
         st.within_position_tol = within_pos
-        st.within_heading_tol = within_head
+        st.within_yaw_tol = within_yaw
         st.dock_healthy = gate.dock_healthy
         st.ready_for_handoff = ready
         self._pub_status.publish(st)

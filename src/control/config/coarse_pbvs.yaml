@@ -26,7 +26,7 @@ coarse_approach:
     # handoff window = coarse's real pure-P accuracy (~5 cm)
     position_tol_m: 0.10
     axis_offset_tol_m: 0.08
-    heading_tol_rad: 0.10
+    yaw_tol_rad: 0.10
     ready_debounce_cycles: 10
 
     degraded_gain_scale: 0.5
