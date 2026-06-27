@@ -8,7 +8,7 @@ fine_align:
     kp_surge: 0.4
     kd_surge: 0.8      # brake the closing velocity so it settles at the target
     kp_sway: 0.8
-    kd_sway: 0.0
+    kd_sway: 0.3      # damp the lateral limit-cycle wobble (pure-P sway oscillates)
     kp_heave: 2.0
     kd_heave: 0.0
     kp_yaw: 1.0
@@ -34,10 +34,13 @@ fine_align:
     align_vertical_tol_m: 0.06
     align_yaw_tol_rad: 0.05
 
-    # seated latch tolerances
+    # seated latch tolerances. Vertical raised to 0.06 to match align: pure-P
+    # heave holds a ~4.5cm steady-state offset, so a 0.03 seat tol is unachievable
+    # and the vehicle would converge but never latch. Tighten only if heave gets
+    # an integral term to actually close the vertical error.
     seated_range_m: 0.10
     seated_lateral_tol_m: 0.03
-    seated_vertical_tol_m: 0.03
+    seated_vertical_tol_m: 0.06
     seated_yaw_tol_rad: 0.05
     seated_debounce_cycles: 10
 
