@@ -24,8 +24,8 @@ class DockVisualizer(Node):
             "mesh_resource",
             "package://description/models/docking_station/meshes/dock_station.dae",
         )
-        self.declare_parameter("mesh_offset_z", -0.190)
-        self.declare_parameter("dock_frame", "dock_filtered")
+        self.declare_parameter("mesh_offset_z_m", -0.190)
+        self.declare_parameter("child_frame", "dock_filtered")
         self.declare_parameter("publish_rate_hz", 5.0)
         # True: render the DAE with its own embedded materials/textures
         # (proper-looking ArUco patterns and dock body colors). False: render
@@ -55,7 +55,7 @@ class DockVisualizer(Node):
         marker = Marker()
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.header.frame_id = (
-            self.get_parameter("dock_frame").get_parameter_value().string_value
+            self.get_parameter("child_frame").get_parameter_value().string_value
         )
         marker.ns = "dock_filtered"
         marker.id = 0
@@ -64,7 +64,7 @@ class DockVisualizer(Node):
         marker.pose.position.x = 0.0
         marker.pose.position.y = 0.0
         marker.pose.position.z = (
-            self.get_parameter("mesh_offset_z").get_parameter_value().double_value
+            self.get_parameter("mesh_offset_z_m").get_parameter_value().double_value
         )
         marker.pose.orientation.w = 1.0
         marker.scale.x = 1.0

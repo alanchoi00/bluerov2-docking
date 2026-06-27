@@ -9,8 +9,8 @@ def generate_launch_description():
             executable='led_mock_publisher',
             name='led_mock_publisher',
             parameters=[{
-                'noise_stddev': 0.01,
-                'detection_distance': 10.0,
+                'noise_stddev_m': 0.01,
+                'detection_distance_m': 10.0,
             }],
             output='screen',
         ),

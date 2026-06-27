@@ -10,14 +10,14 @@ class ArucoRelay(Node):
     def __init__(self):
         super().__init__(node_name="aruco_relay")
 
-        self.declare_parameter("reference_marker_size", 0.1)
-        self.declare_parameter("marker_sizes", [""])
+        self.declare_parameter("reference_marker_size_m", 0.1)
+        self.declare_parameter("marker_sizes_m", [""])
 
         self._size_cache: dict[int, float] = {}
         self._pose_publishers: dict[int, rclpyPublisher] = {}
 
         raw = (
-            self.get_parameter("marker_sizes").get_parameter_value().string_array_value
+            self.get_parameter("marker_sizes_m").get_parameter_value().string_array_value
         )
         for entry in raw:
             if ":" in entry:
@@ -41,7 +41,7 @@ class ArucoRelay(Node):
 
     def _scale(self, mid: int) -> float:
         ref = (
-            self.get_parameter("reference_marker_size")
+            self.get_parameter("reference_marker_size_m")
             .get_parameter_value()
             .double_value
         )
