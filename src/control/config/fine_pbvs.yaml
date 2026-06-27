@@ -17,13 +17,17 @@ fine_align:
     approach_speed_floor: 0.03
 
     target_frame: "map"
-    # target IS the dock entry: aim at the dock pose origin, no standoff offset
-    aim_offset_in_dock: [0.0, 0.0, 0.0]
+    # target IS the dock entry. Z=0.042 raises the aim 42mm above the dock pose
+    # origin (per dock geometry); without it the vehicle settled ~4.5cm high and
+    # never met the vertical align tolerance, so surge stayed gated to 0.
+    aim_offset_in_dock: [0.0, 0.0, 0.042]
     standoff_distance_m: 0.0
 
-    # align-then-advance gate tolerances (tight)
+    # align-then-advance gate tolerances. Vertical loosened to 0.06: pure-P heave
+    # leaves a few-cm steady-state offset, and too-tight a tol keeps `aligned`
+    # false forever (surge stays gated), stalling at the standoff.
     align_lateral_tol_m: 0.03
-    align_vertical_tol_m: 0.03
+    align_vertical_tol_m: 0.06
     align_yaw_tol_rad: 0.05
 
     # seated latch tolerances
