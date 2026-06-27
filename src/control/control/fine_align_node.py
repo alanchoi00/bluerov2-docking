@@ -180,7 +180,12 @@ class FineAlign(Node):
         self._publish_zero(FineAlignStatus.BLOCKED)
 
     def _tick(self) -> None:
-        if self._latest_state is not None and self._latest_state != DockingState.FINE:
+        # Fail-safe active-phase gate: drive ONLY when the FSM has explicitly
+        # asserted FINE. An unknown state (None, before the first /docking/state)
+        # counts as "not FINE", so the terminal controller stays silent on startup
+        # instead of commanding near the dock before it knows the phase. (Coarse is
+        # deliberately permissive at startup; fine, being terminal, is not.)
+        if self._latest_state != DockingState.FINE:
             self._controller.reset()
             self._seated_counter = 0
             self._seated = False
