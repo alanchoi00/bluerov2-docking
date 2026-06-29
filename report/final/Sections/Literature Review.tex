@@ -1,0 +1,32 @@
+\section{Literature Review}
+
+% Target ~12-15 pages (be concise; significant info, not all info). Thematic, not
+% chronological. End by making the research gap explicit -> sets up your contribution.
+
+\subsection{Underwater docking: motivation and phases}
+% Why dock; mission benefits. Homing vs terminal phases. Multi-modal solutions
+% (acoustic/EM/optical) and where vision fits. Position this work as the terminal stage.
+
+\subsection{Acoustic and electromagnetic guidance}
+% Brief: USBL/acoustic transponders, EM homing -- long-range, costly, lower terminal
+% accuracy. Motivates vision for the close-range precision phase.
+
+\subsection{Vision-based docking and fiducial markers}
+% ArUco / AprilTag / ARToolKit. Passive vs active markers; active typically preferred
+% underwater (scattering/absorption). Detection challenges: turbidity, attenuation,
+% range limits, viewing angle. Key refs: dos Santos Cesar et al. (turbidity eval);
+% resident-vehicle docking (5x5 grid study); adaptive/active-marker work.
+
+\subsection{Visual servoing and guidance for docking}
+% IBVS vs PBVS (why PBVS suits a full pose pipeline). Behaviour-based state machines vs
+% path planners for terminal docking. Servoing onto moving / compliant docks.
+
+\subsection{Simulation of underwater vision and docking}
+% Gazebo / Webots platforms; underwater image-formation and turbidity models
+% (Jaffe-McGlamery; Akkaynak-Treibitz revised model / Sea-thru). What sim can and
+% cannot capture (optics not modelled in stock Gazebo).
+
+\subsection{Research gap}
+% Synthesise: the detection algorithm is mature, but the operating ENVELOPE of a
+% PASSIVE-marker dock on a low-cost ROV tier is not quantified, and synthetic-turbidity
+% validation on real captures is underused. This is what the thesis measures.

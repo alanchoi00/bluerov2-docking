@@ -1,0 +1,27 @@
+\section{Results and discussion}
+
+% Target ~15-20 pages (largest section -- this is where your contribution lives).
+% Mirror Part A / Part B. Interpret results; link back to the gaps and objectives.
+
+\subsection{Part A: Simulation results}
+% Docking success (coarse -> fine -> docked); example trajectories; sway tracking with
+% vs without feedforward; pose/alignment error at engagement; robustness across sway
+% amplitude and period. Discussion: the docking behaviour is achievable GIVEN a valid
+% relative pose. Note any failure cases / limits.
+% FIGURES: trajectory plots, error-vs-time, sway-tracking, docking sequence stills.
+
+\subsection{Part B: Real-CV results}
+% Detection rate vs range per marker size; maximum detection range; pose error and
+% jitter vs range; turbidity sweep (real baseline + synthetic Jerlov levels);
+% ID-error rate; failure-mode catalogue (contrast loss, backscatter, blur, glare,
+% occlusion, FOV exit). Discussion: this is the MEASURED OPERATING ENVELOPE; relate to
+% marker sizing and approach standoff.
+% FIGURES: detection-range curves, pose-error-vs-range, turbidity-degradation plots,
+% annotated detections at the range limit.
+
+\subsection{Synthesis}
+% Tie the two together: simulation shows docking is achievable given a valid pose; the
+% real-CV envelope shows WHEN that pose is available. Their intersection bounds the
+% realistic operating range of passive-marker terminal docking, and the failure
+% boundary quantifies where a far-field cue (LED) becomes necessary -- backed by your
+% own numbers, not assumption.

@@ -1,0 +1,53 @@
+\section{Methodology}
+
+% Target ~10-15 pages. Theory + experimental methods, with references. Use block
+% diagrams / flowcharts. Highlight the methodological novelty (synthetic-turbidity
+% characterisation of passive-marker perception). Keep Part A / Part B parallel.
+
+\subsection{System architecture}
+% Perception -> guidance -> control overview. The docking state machine
+% (SEARCHING [deferred] -> COARSE_APPROACH -> FINE_ALIGNMENT -> ENGAGE -> DOCKED, ABORT).
+% Justify PBVS over IBVS given the full pose pipeline. State the scope boundary:
+% long-range acquisition assumed (prior homing); SEARCHING/LED cue is future work.
+% FIGURE: architecture block diagram + annotated state machine.
+
+\subsection{Part A: Docking simulation}
+
+\subsubsection{Simulation environment}
+% ROS 2, Gazebo Harmonic, ArduSub SITL, BlueRovSim/Blue framework. Dock model (SDF) and
+% the swaying-dock plugin (sinusoidal heave/sway; amplitude/period; ground-truth pose).
+
+\subsubsection{Perception (ground-truth pose)}
+% aruco_fusion (inverse-variance spatial fusion, tangent-space quaternion fusion) and
+% dock_pose_filter (MEKF, inject-and-reset, Mahalanobis gating, adaptive process noise).
+% In sim: ground-truth pose; detection layered conceptually.
+
+\subsubsection{Guidance and control}
+% PBVS coarse approach to a standoff pose on the dock approach axis; fine 6-DOF
+% alignment. Sway feedforward from the dock-velocity estimate. Transition conditions
+% (range/lateral/yaw thresholds) and ABORT logic. Controller gains/tuning.
+
+\subsection{Part B: Real-CV validation}
+
+\subsubsection{Marker target design}
+% Original ArUco dictionary; dock IDs (201,202,301-305,401,402) and sizes
+% (200/100/60/47.5 mm total; black square 0.7782x). Matte print to reduce glare.
+
+\subsubsection{Capture setup}
+% BlueROV2 + ZED (one lens, monocular ArUco); rosbag (MCAP+zstd); pool. Camera
+% calibration (in-water / behind-port). Topic set.
+
+\subsubsection{Experiment design}
+% Independent variables (range x marker size x viewing angle); controlled variables;
+% ground truth = tape/survey range; ZED stereo depth as a cross-check (refraction bias,
+% Z^2 error -- secondary, not GT). Enumerated runs.
+
+\subsubsection{Turbidity}
+% Baseline: image-based estimate (Turbidivision, FNU) + pool operator log. Added:
+% synthetic forward IFM, I_c = J_c e^{-beta_c d} + B_c(1 - e^{-beta_c d}), parameterised
+% by Jerlov water types; optional real dosed points for beta-FNU calibration.
+
+\subsubsection{Detection and metrics}
+% cv2.aruco detection + PnP per marker; metric definitions: detection rate, max
+% detection range, min apparent size (px), pose translation/rotation error, jitter,
+% noise-vs-range fit (alpha), ID-error rate, reprojection error, angular limit.

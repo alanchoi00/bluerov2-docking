@@ -1,0 +1,34 @@
+\section{Introduction}
+
+% Target 1-2 pages. Audience: an engineer not familiar with your topic.
+% Suggested flow (write as prose, not bullets):
+
+% (1) Field + motivation: subsea docking enables persistent operation -- recharging,
+%     data offload, and re-tasking without a surface vessel; longer missions, faster
+%     turnaround, persistent presence.
+% FIGURE: annotated picture of the docking problem (BlueROV2 approaching the dock).
+
+% (2) Where this work sits: docking proceeds in phases (long-range homing -> terminal
+%     precision). Conventional systems are multi-modal (acoustic/EM + vision) and use
+%     vision for the terminal phase. This project addresses the OPTICAL TERMINAL STAGE
+%     -- it is a subsystem, not a replacement for the full pipeline.
+
+% (3) The project + the two deliverables:
+%       - a docking simulation (PBVS, coarse->fine, swaying dock), and
+%       - a standalone characterisation of passive-marker perception on real
+%         underwater imagery.
+% FIGURE: workflow / pipeline block diagram (perception -> guidance -> control;
+%         and sim vs real-CV split).
+
+% (4) Objective and contributions (state plainly; keep contribution claims here, NOT in
+%     the originality statement):
+%       Objective: design and validate a vision-based terminal docking system for a
+%       low-cost ROV -- demonstrating autonomous coarse-to-fine docking onto a swaying
+%       dock in simulation, and characterising the operating envelope of marker-based
+%       perception from real underwater imagery.
+%       Contributions: (i) an integrated simulation demonstrating autonomous
+%       coarse-to-fine docking onto a swaying dock; (ii) a measured operating envelope
+%       (detection range, turbidity, pose error) from real underwater ArUco captures;
+%       (iii) a reusable validation toolkit and dataset.
+
+% (5) Report organisation: one or two sentences on the structure that follows.
