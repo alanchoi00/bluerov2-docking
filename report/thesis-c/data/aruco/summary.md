@@ -1,6 +1,6 @@
 # Results summary
 
-- Analysis code: `alanchoi00/underwater-aruco-validation@8c23d0a`
+- Analysis code: `alanchoi00/underwater-aruco-validation@fe8b49d`
 - OpenCV: `4.10.0`
 - Fitted law: `max_range ~ 34.9 x side_length`
 - Host CPU (latency context): `11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz`
@@ -10,6 +10,8 @@
 - Latency is detectMarkers on the analysis host, not on ROV compute.
 - Angle is reported as two regimes (test1 head-on, test2 oblique ~57 deg), NOT a swept curve: there is no controlled angle sweep and angle is confounded with range/size (spec 3.1c).
 - 3 bin(s) with fewer than 10 trials were suppressed from the detection-rate figures (their Wilson CI spans most of the axis and would dominate the plot with no information); the full per-bin table, including these, is still in `detection_trials_test1.csv` / `detection_trials_test2.csv`. Suppressed: 75 mm, 8-12 px, n=2; 75 mm, 100-140 px, n=2; 149 mm, 200-300 px, n=1.
+- 1 bin(s) with fewer than 10 trials were suppressed from the pose-error-vs-range figure (pooled across marker sizes; n=1-3 bins were near-empty and would carry a std of NaN or an unrepresentative one); the full per-bin table, including these, is still in `trans_err_vs_range.csv`. Suppressed: 3.0-4.0 m, n=3.
+- The pose-error-vs-range figure is pooled across marker sizes, not broken down per size: the leave-one-out board reference used by `pose_error_vs_reference` gets weaker when 201/202 are the marker under test (only the narrow centre cluster remains as reference) and stronger when a small marker is under test (201+202, 427 mm apart, remain) -- a per-size split would measure that reference confound, not marker quality, and read backwards (see `analysis/metrics.py`).
 
 ## test1
 
