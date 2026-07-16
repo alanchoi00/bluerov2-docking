@@ -1,5 +1,5 @@
 {
-  "code_version": "a737503",
+  "code_version": "e5af75f",
   "host_cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
   "imu_gravity_check": {
     "board_tilt_from_vertical_deg_median": 6.64,
