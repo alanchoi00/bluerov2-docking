@@ -1,5 +1,5 @@
 {
-  "code_version": "fe8b49d",
+  "code_version": "b56913f",
   "host_cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
   "imu_gravity_check": {
     "board_tilt_from_vertical_deg_median": 6.64,
@@ -195,6 +195,14 @@
   },
   "opencv": "4.10.0",
   "range_per_side_fit": 34.93905483981219,
+  "rot_err_vs_range_deg": {
+    "0.5-1.0": 11.3,
+    "1.0-1.5": 16.2,
+    "1.5-2.0": 14.1,
+    "2.0-3.0": 16.4,
+    "3.0-4.0": null,
+    "4.0-5.5": null
+  },
   "runs": {
     "test1": {
       "detections": 1376,
@@ -286,6 +294,12 @@
       "bin_hi_m": 4.0,
       "bin_lo_m": 3.0,
       "figure": "trans_err_vs_range",
+      "n": 3
+    },
+    {
+      "bin_hi_m": 4.0,
+      "bin_lo_m": 3.0,
+      "figure": "rot_err_vs_range",
       "n": 3
     }
   ],
