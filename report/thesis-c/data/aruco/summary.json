@@ -1,5 +1,5 @@
 {
-  "code_version": "unknown",
+  "code_version": "8c23d0a",
   "host_cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
   "imu_gravity_check": {
     "board_tilt_from_vertical_deg_median": 6.64,
@@ -8,113 +8,184 @@
     "std_deg": 6.89
   },
   "imu_yaw_check": {
-    "n_turn_segments": 25,
-    "n_usable_spans": 18,
-    "note": "vision vs gyro delta-yaw per turn; few usable spans expected because turns swing the board out of frame. Gyro (IMU up-z) and vision (optical Y) may differ in SIGN -- compare magnitude/correlation, not raw sign, until reconciled against data.",
-    "spans": [
+    "evaluable_spans": [
       {
-        "gyro_deg": -27.4,
-        "t0": 870.9,
-        "t1": 872.8,
-        "vision_deg": 25.2
-      },
-      {
+        "coverage": 1.0,
         "gyro_deg": 19.3,
         "t0": 882.9,
         "t1": 884.2,
         "vision_deg": -23.6
       },
       {
-        "gyro_deg": -28.5,
-        "t0": 891.5,
-        "t1": 893.2,
-        "vision_deg": 7.7
-      },
-      {
-        "gyro_deg": -32.5,
-        "t0": 905.2,
-        "t1": 907.0,
-        "vision_deg": 23.5
-      },
-      {
+        "coverage": 1.0,
         "gyro_deg": 15.3,
         "t0": 911.6,
         "t1": 912.9,
         "vision_deg": -6.2
       },
       {
+        "coverage": 1.0,
         "gyro_deg": 16.0,
         "t0": 915.1,
         "t1": 916.1,
         "vision_deg": 7.5
       },
       {
-        "gyro_deg": -31.0,
-        "t0": 919.2,
-        "t1": 921.0,
-        "vision_deg": 3.6
-      },
-      {
+        "coverage": 1.0,
         "gyro_deg": 11.8,
         "t0": 926.4,
         "t1": 927.6,
         "vision_deg": -0.7
       },
       {
-        "gyro_deg": -28.0,
-        "t0": 933.5,
-        "t1": 934.9,
-        "vision_deg": 9.2
-      },
-      {
-        "gyro_deg": 15.0,
-        "t0": 941.9,
-        "t1": 943.0,
-        "vision_deg": -0.1
-      },
-      {
-        "gyro_deg": -34.8,
-        "t0": 944.6,
-        "t1": 946.3,
-        "vision_deg": 8.8
-      },
-      {
+        "coverage": 1.0,
         "gyro_deg": 14.3,
         "t0": 953.4,
         "t1": 954.4,
         "vision_deg": -3.3
       },
       {
-        "gyro_deg": -25.6,
-        "t0": 957.1,
-        "t1": 958.5,
-        "vision_deg": 4.8
-      },
-      {
+        "coverage": 1.0,
         "gyro_deg": 14.6,
         "t0": 962.7,
         "t1": 963.7,
         "vision_deg": -1.7
       },
       {
+        "coverage": 1.0,
+        "gyro_deg": 20.6,
+        "t0": 965.5,
+        "t1": 967.0,
+        "vision_deg": -4.0
+      }
+    ],
+    "min_coverage": 0.8,
+    "n_evaluable": 7,
+    "n_turn_segments": 25,
+    "n_usable_spans": 18,
+    "note": "vision vs gyro delta-yaw per turn, restricted to segments where the board's PnP pose covers >= 80% of that segment's camera frames (n_evaluable/n_turn_segments); other segments have a pose at both ends but the board left frame partway through the turn, so vision under-reports the rotation and the comparison is not meaningful. Gyro (IMU up-z) and vision (optical down-y) measure yaw about opposite axes by convention, so an expected sign flip is not an error.",
+    "spans": [
+      {
+        "coverage": 0.6,
+        "gyro_deg": -27.4,
+        "t0": 870.9,
+        "t1": 872.8,
+        "vision_deg": 25.2
+      },
+      {
+        "coverage": 1.0,
+        "gyro_deg": 19.3,
+        "t0": 882.9,
+        "t1": 884.2,
+        "vision_deg": -23.6
+      },
+      {
+        "coverage": 0.25,
+        "gyro_deg": -28.5,
+        "t0": 891.5,
+        "t1": 893.2,
+        "vision_deg": 7.7
+      },
+      {
+        "coverage": 0.4,
+        "gyro_deg": -32.5,
+        "t0": 905.2,
+        "t1": 907.0,
+        "vision_deg": 23.5
+      },
+      {
+        "coverage": 1.0,
+        "gyro_deg": 15.3,
+        "t0": 911.6,
+        "t1": 912.9,
+        "vision_deg": -6.2
+      },
+      {
+        "coverage": 1.0,
+        "gyro_deg": 16.0,
+        "t0": 915.1,
+        "t1": 916.1,
+        "vision_deg": 7.5
+      },
+      {
+        "coverage": 0.5,
+        "gyro_deg": -31.0,
+        "t0": 919.2,
+        "t1": 921.0,
+        "vision_deg": 3.6
+      },
+      {
+        "coverage": 1.0,
+        "gyro_deg": 11.8,
+        "t0": 926.4,
+        "t1": 927.6,
+        "vision_deg": -0.7
+      },
+      {
+        "coverage": 0.0,
+        "gyro_deg": -28.0,
+        "t0": 933.5,
+        "t1": 934.9,
+        "vision_deg": 9.2
+      },
+      {
+        "coverage": 0.67,
+        "gyro_deg": 15.0,
+        "t0": 941.9,
+        "t1": 943.0,
+        "vision_deg": -0.1
+      },
+      {
+        "coverage": 0.0,
+        "gyro_deg": -34.8,
+        "t0": 944.6,
+        "t1": 946.3,
+        "vision_deg": 8.8
+      },
+      {
+        "coverage": 1.0,
+        "gyro_deg": 14.3,
+        "t0": 953.4,
+        "t1": 954.4,
+        "vision_deg": -3.3
+      },
+      {
+        "coverage": 0.25,
+        "gyro_deg": -25.6,
+        "t0": 957.1,
+        "t1": 958.5,
+        "vision_deg": 4.8
+      },
+      {
+        "coverage": 1.0,
+        "gyro_deg": 14.6,
+        "t0": 962.7,
+        "t1": 963.7,
+        "vision_deg": -1.7
+      },
+      {
+        "coverage": 1.0,
         "gyro_deg": 20.6,
         "t0": 965.5,
         "t1": 967.0,
         "vision_deg": -4.0
       },
       {
+        "coverage": 0.0,
         "gyro_deg": -30.5,
         "t0": 969.2,
         "t1": 970.9,
         "vision_deg": 19.1
       },
       {
+        "coverage": 0.0,
         "gyro_deg": -25.6,
         "t0": 981.0,
         "t1": 982.8,
         "vision_deg": 37.8
       },
       {
+        "coverage": 0.0,
         "gyro_deg": -29.8,
         "t0": 993.3,
         "t1": 995.0,
@@ -146,8 +217,8 @@
         "p10": 4.2,
         "p90": 28.5
       },
-      "latency_ms_median": 3.0951400003687013,
-      "latency_ms_p95": 5.767057000775811,
+      "latency_ms_median": 2.657991997693898,
+      "latency_ms_p95": 5.014746799133714,
       "max_range_m": {
         "201": 5.10005241774321,
         "202": 4.872079182927874,
@@ -160,6 +231,8 @@
         "402": 1.1431766068795899
       },
       "mis_id_rate": 0.0014534883720930232,
+      "n_misses": 1229,
+      "n_trials": 2551,
       "turn_frames": 101
     },
     "test2": {
@@ -175,22 +248,70 @@
         "p10": 25.1,
         "p90": 62.6
       },
-      "latency_ms_median": 2.335967001272365,
-      "latency_ms_p95": 4.079118600930087,
+      "latency_ms_median": 2.034832999925129,
+      "latency_ms_p95": 3.614046399889047,
       "max_range_m": {
         "201": 4.975957085710216,
         "202": 4.73245522366639
       },
       "mis_id_rate": 0.0,
+      "n_misses": 854,
+      "n_trials": 950,
       "turn_frames": 33
     }
   },
+  "suppressed_bins": [
+    {
+      "bin_hi_px": 12.0,
+      "bin_lo_px": 8.0,
+      "group_mm": 74.7,
+      "n": 2
+    },
+    {
+      "bin_hi_px": 140.0,
+      "bin_lo_px": 100.0,
+      "group_mm": 74.7,
+      "n": 2
+    },
+    {
+      "bin_hi_px": 300.0,
+      "bin_lo_px": 200.0,
+      "group_mm": 149.4,
+      "n": 1
+    }
+  ],
   "trans_err_vs_range_mm": {
-    "0.5-1.0": 10.6,
-    "1.0-1.5": 23.5,
-    "1.5-2.0": 32.9,
-    "2.0-3.0": 36.1,
-    "3.0-4.0": 50.1,
-    "4.0-5.5": null
+    "149mm": {
+      "0.5-1.0": 15.5,
+      "1.0-1.5": 32.2,
+      "1.5-2.0": 32.4,
+      "2.0-3.0": 31.2,
+      "3.0-4.0": 29.2,
+      "4.0-5.5": null
+    },
+    "36mm": {
+      "0.5-1.0": 12.3,
+      "1.0-1.5": 15.6,
+      "1.5-2.0": null,
+      "2.0-3.0": null,
+      "3.0-4.0": null,
+      "4.0-5.5": null
+    },
+    "44mm": {
+      "0.5-1.0": 8.5,
+      "1.0-1.5": 20.3,
+      "1.5-2.0": 39.9,
+      "2.0-3.0": 13.1,
+      "3.0-4.0": null,
+      "4.0-5.5": null
+    },
+    "75mm": {
+      "0.5-1.0": 7.1,
+      "1.0-1.5": 22.0,
+      "1.5-2.0": 27.0,
+      "2.0-3.0": 47.9,
+      "3.0-4.0": 92.1,
+      "4.0-5.5": null
+    }
   }
 }
