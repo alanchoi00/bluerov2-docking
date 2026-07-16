@@ -1,6 +1,6 @@
 # Results summary
 
-- Analysis code: `alanchoi00/underwater-aruco-validation@4f418b6`
+- Analysis code: `alanchoi00/underwater-aruco-validation@89fb507`
 - OpenCV: `4.10.0`
 - Fitted law: `max_range ~ 34.9 x side_length`
 - Host CPU (latency context): `11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz`
