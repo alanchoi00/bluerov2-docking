@@ -68,7 +68,8 @@
         "eamodio.gitlens",
         "github.vscode-github-actions",
         "ms-vscode.cpptools",
-        "ms-vscode.cmake-tools"
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools-extension-pack"
       ]
     }
   }
